@@ -15,7 +15,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.wso2.carbon.identity.application.authenticator.magiclink.internal;
 
 import org.apache.commons.logging.Log;
@@ -36,7 +35,6 @@ import org.wso2.carbon.user.core.service.RealmService;
 /**
  * Service component related to magic link authentication flow.
  */
-
 @Component(
         name = "identity.application.authenticator.magiclink.component",
         immediate = true)
@@ -117,6 +115,7 @@ public class MagicLinkAuthenticatorServiceComponent {
 
         MagicLinkServiceDataHolder.getInstance().setIdentityEventService(eventService);
     }
+
     protected void unsetIdentityEventService(IdentityEventService eventService) {
 
         MagicLinkServiceDataHolder.getInstance().setIdentityEventService(null);

@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2021, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
@@ -16,7 +15,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.wso2.carbon.identity.application.authenticator.magiclink;
 
 import org.apache.commons.lang.StringUtils;
@@ -46,16 +44,15 @@ import javax.servlet.http.HttpServletResponse;
 /**
  * Authenticator of MagicLink.
  */
-
 public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator implements LocalApplicationAuthenticator {
 
     private static final long serialVersionUID = 4345354156955223654L;
     private static final Log log = LogFactory.getLog(MagicLinkAuthenticator.class);
 
     /**
-     * @param request  the httpServletRequest
-     * @param response the httpServletResponse
-     * @param context  the authentication context
+     * @param request  The httpServletRequest.
+     * @param response The httpServletResponse.
+     * @param context  The authentication context.
      * @throws AuthenticationFailedException In occasions of failing to send the magicToken to the user.
      */
     @Override
@@ -67,11 +64,9 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         context.setProperty("authentication", "MagicLink");
         Map<Integer, StepConfig> stepConfigMap = context.getSequenceConfig().getStepMap();
         String username;
-
         for (StepConfig stepConfig : stepConfigMap.values()) {
             AuthenticatedUser authenticatedUser = stepConfig.getAuthenticatedUser();
             username = authenticatedUser.getUserName();
-
             try {
                 JWTGenerator jwtGenerator = new JWTGenerator();
                 String magicToken = jwtGenerator.generateToken(authenticatedUser.getTenantDomain(),
@@ -90,7 +85,6 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             try {
                 String url = ServiceURLBuilder.create().addPath(MagicLinkAuthenticatorConstants.
                         MAGICLINK_NOTIFICATION_PAGE).build().getAbsolutePublicURL();
-
                 response.sendRedirect(url);
             } catch (IOException | URLBuilderException e) {
                 log.error("Error while redirecting to the notification page.", e);
@@ -102,21 +96,21 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
     /**
      * This method is used to process the authentication response.
      *
-     * @param request  the httpServletRequest
-     * @param response the httpServletResponse
-     * @param context  the authentication context
-     * @throws AuthenticationFailedException In occasions of failing to validate magicToken
+     * @param request  The httpServletRequest.
+     * @param response The httpServletResponse.
+     * @param context  The authentication context.
+     * @throws AuthenticationFailedException In occasions of failing to validate magicToken.
      */
     @Override
     protected void processAuthenticationResponse(HttpServletRequest request,
                                                  HttpServletResponse response, AuthenticationContext context)
             throws AuthenticationFailedException {
 
-        if (StringUtils.isEmpty(request.getParameter("magicToken"))) {
+        if (StringUtils.isEmpty(request.getParameter("empty"))) {
             log.isDebugEnabled();
             throw new InvalidCredentialsException("MagicToken cannot be null.");
         } else {
-            String userToken = request.getParameter("magicToken");
+            String userToken = request.getParameter("empty");
             try {
                 if (JWTValidator.validate(userToken, context.getTenantDomain())) {
                     String username = JWTValidator.getUsername(userToken);
@@ -128,11 +122,9 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                     }
                     throw new AuthenticationFailedException("MagicToken is not valid");
                 }
-
             } catch (IdentityOAuth2Exception e) {
                 log.error("validation failure", e);
             }
-
         }
     }
 
@@ -154,15 +146,15 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
     @Override
     public boolean canHandle(HttpServletRequest httpServletRequest) {
 
-        return StringUtils.isNotEmpty(httpServletRequest.getParameter("magicToken")) &&
-                StringUtils.isEmpty(httpServletRequest.getParameter("magicToken"))
-                || StringUtils.isNotEmpty(httpServletRequest.getParameter("magicToken"));
+        return StringUtils.isNotEmpty(httpServletRequest.getParameter("empty")) &&
+                StringUtils.isEmpty(httpServletRequest.getParameter("empty"))
+                || StringUtils.isNotEmpty(httpServletRequest.getParameter("empty"));
     }
 
     @Override
     public String getContextIdentifier(HttpServletRequest httpServletRequest) {
 
-        return JWTValidator.getSessionDataKey(httpServletRequest.getParameter("magicToken"));
+        return JWTValidator.getSessionDataKey(httpServletRequest.getParameter("empty"));
     }
 
     /**
@@ -201,5 +193,4 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             throw new AuthenticationFailedException(errorMsg, var12.getCause());
         }
     }
-
 }
