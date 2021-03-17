@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+~ Copyright (c) 2021, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+~
+~ Licensed under the Apache License, Version 2.0 (the "License");
+~ you may not use this file except in compliance with the License.
+~ You may obtain a copy of the License at
+~
+~      http://www.apache.org/licenses/LICENSE-2.0
+~
+~ Unless required by applicable law or agreed to in writing, software
+~ distributed under the License is distributed on an "AS IS" BASIS,
+~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+~ See the License for the specific language governing permissions and
+~ limitations under the License.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.wso2.carbon.identity.application.authenticator</groupId>
+    <artifactId>org.wso2.carbon.identity.application.authenticator.magiclink</artifactId>
+    <packaging>bundle</packaging>
+    <version>1.0.0</version>
+    <name>WSO2 Carbon - MagicLink Authenticator</name>
+    <dependencies>
+        <dependency>
+            <groupId>org.wso2.carbon</groupId>
+            <artifactId>org.wso2.carbon.utils</artifactId>
+            <version>${carbon.kernel.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.identity.framework</groupId>
+            <artifactId>org.wso2.carbon.identity.mgt</artifactId>
+            <version>${carbon.identity.framework.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon</groupId>
+            <artifactId>org.wso2.carbon.logging</artifactId>
+            <version>${commons-logging.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.identity.framework</groupId>
+            <artifactId>org.wso2.carbon.identity.application.authentication.framework</artifactId>
+            <version>${carbon.identity.framework.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.identity.framework</groupId>
+            <artifactId>org.wso2.carbon.identity.event</artifactId>
+            <version>${carbon.identity.framework.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.identity</groupId>
+            <artifactId>org.wso2.carbon.identity.application.authenticator.oidc</artifactId>
+            <version>${identity.outbound.auth.oidc.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.identity.event.handler.notification</groupId>
+            <artifactId>org.wso2.carbon.email.mgt</artifactId>
+            <version>${identity.event.handler.notification.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon</groupId>
+            <artifactId>org.wso2.carbon.user.api</artifactId>
+            <version>${carbon.kernel.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.identity.inbound.auth.oauth2</groupId>
+            <artifactId>org.wso2.carbon.identity.oauth</artifactId>
+            <version>${identity.inbound.auth.oauth.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.extension.identity.authenticator.utils</groupId>
+            <artifactId>org.wso2.carbon.extension.identity.helper</artifactId>
+            <version>${org.wso2.carbon.extension.identity.helper.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.nimbusds</groupId>
+            <artifactId>nimbus-jose-jwt</artifactId>
+            <version>${nimbus.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.felix</groupId>
+            <artifactId>org.apache.felix.scr.ds-annotations</artifactId>
+            <version>${apache.felix.scr.ds.annotations.version}</version>
+        </dependency>
+    </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <inherited>true</inherited>
+                <configuration>
+                    <encoding>UTF-8</encoding>
+                    <source>1.7</source>
+                    <target>1.7</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <version>3.2.0</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <instructions>
+                        <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
+                        <Bundle-Name>${project.artifactId}</Bundle-Name>
+                        <Axis2Module>${project.artifactId}-${project.version}</Axis2Module>
+                        <Import-Package>
+                            javax.servlet,
+                            javax.servlet.http,
+                            net.minidev.*; version="1.1.1",
+                            *;resolution:=optional
+                        </Import-Package>
+                        <Private-Package>
+                            org.wso2.carbon.identity.application.authenticator.magiclink.internal,
+                        </Private-Package>
+                        <Export-Package>
+                            !org.wso2.carbon.identity.application.authenticator.magiclink.internal,
+                            org.wso2.carbon.identity.application.authenticator.magiclink.*;
+                            version="1.0.0"
+                        </Export-Package>
+                    </instructions>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>8</source>
+                    <target>8</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+    <repositories>
+        <repository>
+            <id>wso2-nexus</id>
+            <name>WSO2 internal Repository</name>
+            <url>http://maven.wso2.org/nexus/content/groups/wso2-public/</url>
+            <releases>
+                <enabled>true</enabled>
+                <updatePolicy>daily</updatePolicy>
+                <checksumPolicy>ignore</checksumPolicy>
+            </releases>
+        </repository>
+        <repository>
+            <id>wso2.releases</id>
+            <name>WSO2 internal Repository</name>
+            <url>https://maven.wso2.org/nexus/content/repositories/releases/</url>
+            <releases>
+                <enabled>true</enabled>
+                <updatePolicy>daily</updatePolicy>
+                <checksumPolicy>ignore</checksumPolicy>
+            </releases>
+        </repository>
+        <repository>
+            <id>wso2.snapshots</id>
+            <name>WSO2 Snapshot Repository</name>
+            <url>https://maven.wso2.org/nexus/content/repositories/snapshots/</url>
+            <snapshots>
+                <enabled>true</enabled>
+                <updatePolicy>daily</updatePolicy>
+            </snapshots>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+        </repository>
+    </repositories>
+    <pluginRepositories>
+        <pluginRepository>
+            <id>wso2-maven2-repository</id>
+            <url>http://dist.wso2.org/maven2</url>
+        </pluginRepository>
+    </pluginRepositories>
+    <properties>
+        <carbon.kernel.version>4.4.11</carbon.kernel.version>
+        <carbon.identity.framework.version>5.19.52</carbon.identity.framework.version>
+        <apache.felix.scr.ds.annotations.version>1.2.10</apache.felix.scr.ds.annotations.version>
+        <org.wso2.carbon.extension.identity.helper.version>1.2.4</org.wso2.carbon.extension.identity.helper.version>
+        <nimbus.version>7.0</nimbus.version>
+        <identity.event.handler.notification.version>1.3.14</identity.event.handler.notification.version>
+        <identity.inbound.auth.oauth.version>6.4.126</identity.inbound.auth.oauth.version>
+        <identity.outbound.auth.oidc.version>5.1.2</identity.outbound.auth.oidc.version>
+        <commons-logging.version>4.4.3</commons-logging.version>
+    </properties>
+</project>
+
+
