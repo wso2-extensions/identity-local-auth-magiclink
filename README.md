@@ -216,7 +216,6 @@ parameters as follows.
                         </table>
                     </td>
                 </tr>
-             
                 <tr>
                     <td style="text-align: left; padding: 30px 50px 50px 50px;" valign="top">
                         <p style="font-size: 18px; margin: 0; line-height: 24px; font-family: 'Nunito Sans', Arial, Verdana, Helvetica, sans-serif; color: #505050; text-align: left;">
