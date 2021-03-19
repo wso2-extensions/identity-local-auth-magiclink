@@ -155,8 +155,7 @@ Follow the steps given below to update the user's email address.
 7. Click Update.
 
 ### Using HTML Templates in Emails
-
-### Configure the Email Templates
+ 
 1. Login to the Carbon Console and Goto **Manage > Email Templates > Add** and click on **Add Email Template Type** to add a 
 new Email Template type. 
 
@@ -199,7 +198,6 @@ parameters as follows.
                             Hi {{user-name}},
                         </p>
                         <p style="font-size: 18px; margin: 0; line-height: 24px; font-family: 'Nunito Sans', Arial, Verdana, Helvetica, sans-serif; color: #666; text-align: left; padding-bottom: 3%;">
-                       
                             Please click the button below to confirm your account.
                         </p>
                     </td>
