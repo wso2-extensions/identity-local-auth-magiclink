@@ -1,5 +1,14 @@
 # identity-local-auth-magiclink
 Magic link authenticator for WSO2 Identity Server
+
+Download the source code from [here](https://github.com/wso2-incubator/identity-local-auth-magiclink)
+
+Navigate to the folder you just downloaded, which contains the pom.xml file and build the source code by running the following command on your terminal.
+
+    $ mvn clean install
+
+Copy the org.wso2.carbon.identity.application.authenticator.magiclink-1.0.0.jar file found inside the target folder and paste it in the <IS_HOME>/repository/components/dropins folder.
+
 # Configuring Magic Link Authenticator
 This section provides the instructions to configure Magic Link Authenticator in WSO2 Identity Server (WSO2 IS). The Magic Link Authentication is a password-less authentication implemented by sending an embedded token via a link in email. 
 
