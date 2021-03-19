@@ -23,19 +23,19 @@ Follow the steps below to configure WSO2 IS to send email once the Magic Link Au
 
 2. Add the following properties to the deployment.toml file in the IS_HOME/repository/conf folder to configure the email server.
       
-     [output_adapter.email]
-     from_address= "wso2iamtest@gmail.com"
-     username= "wso2iamtest"
-     password= "Wso2@iam70"
-     hostname= "smtp.gmail.com"
-     port= 587
-     enable_start_tls= true
-     enable_authentication= true
+            [output_adapter.email]
+            from_address= "wso2iamtest@gmail.com"
+            username= "wso2iamtest"
+            password= "Wso2@iam70"
+            hostname= "smtp.gmail.com"
+            port= 587
+            enable_start_tls= true
+            enable_authentication= true
  
 3. Add the following configurations to the <IS_HOME>/repository/conf/identity/application-authentication.xml  file  under the section.
 
         <AuthenticatorConfig name="MagicLinkAuthenticator" enabled="true">     
- 	         <Parameter name="Duration">180000</Parameter>
+ 	     <Parameter name="Duration">180000</Parameter>
            <Parameter name="Issuer">ServerOrigin</Parameter>
            <Parameter name="Audience">ServerOrigin</Parameter>
         </AuthenticatorConfig>
@@ -63,58 +63,43 @@ Follow the steps below to configure WSO2 IS to send email once the Magic Link Au
 
 Follow the steps below add a service provider:
 
-Return to the Management Console home screen.
+1. Return to the Management Console home screen.
 
 
-Click Add under Add under Main > Identity > Service Providers.
+2. Click Add under Add under Main > Identity > Service Providers.
 
+   ![](images/service_provider_console.png)
 
+3. Enter pickup-dispatch as the Service Provider Name.
 
+4. Click Register.
 
+5. Expand OAuth/OpenID connect Configuration under Inbound Authentication Configuration.
 
+6. Enter the following value as the Callback URL: http://localhost.com:8080/pickup-dispatch/oauth2client.
 
+7. Click Add. Note the OAuth Client Key and Client Secret that is displayed. You will need these values later on when deploying the sample application.
 
+8. Click Register to save the changes.
 
+9. Go to the Local and Outbound Authentication Configuration section and select the Advanced configuration radio button option.
 
+      1. Creating the first authentication step:
+      
+          - Click Add Authentication Step.
+       
+          - Click Add Authenticator that is under Local Authenticators of Step 1 to add the identity-first handler as the first step.
+      
+     2. Creating the second authentication step:
 
+         - Click Add Authentication Step.
 
+         - Click Add Authenticator that is under Local Authenticators of Step 2 to add the MagicLink   
+         
+![](images/service_provider_console.png)
 
-
- Enter pickup-dispatch as the Service Provider Name.
-
- Click Register.
-
-Expand OAuth/OpenID connect Configuration under Inbound Authentication Configuration.
-Enter the following value as the Callback URL: 
-http://localhost.com:8080/pickup-dispatch/oauth2client
-
-Click Add. Note the OAuth Client Key and Client Secret that is displayed. You will need these values later on when deploying the sample application.
-
-Click Register to save the changes.
-
-Go to the Local and Outbound Authentication Configuration section.
-
-
-Select the Advanced configuration radio button option.
-
-
-Creating the first authentication step:
-
-
-Click Add Authentication Step.
-Click Add Authenticator that is under Local Authenticators of Step 1 to add the identity-first handler as the first step.
-
-
-
-Creating the second authentication step:
-
-
-Click Add Authentication Step.
-Click Add Authenticator that is under Local Authenticators of Step 2 to add the MagicLink   
-
- Click Update
-You have now added and configured the service provider.
-
+10. Click Update.
+ 
 
 
 
