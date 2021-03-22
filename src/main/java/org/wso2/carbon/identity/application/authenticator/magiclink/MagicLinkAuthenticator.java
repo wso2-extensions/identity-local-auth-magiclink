@@ -50,6 +50,8 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
     private static final Log log = LogFactory.getLog(MagicLinkAuthenticator.class);
 
     /**
+     * This method is used initiate authenticate request.
+     *
      * @param request  The httpServletRequest.
      * @param response The httpServletResponse.
      * @param context  The authentication context.
@@ -106,11 +108,11 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                                                  HttpServletResponse response, AuthenticationContext context)
             throws AuthenticationFailedException {
 
-        if (StringUtils.isEmpty(request.getParameter("mL"))) {
+        if (StringUtils.isEmpty(request.getParameter(MagicLinkAuthenticatorConstants.MAGICLINK))) {
             log.isDebugEnabled();
             throw new InvalidCredentialsException("MagicToken cannot be null.");
         } else {
-            String userToken = request.getParameter("mL");
+            String userToken = request.getParameter(MagicLinkAuthenticatorConstants.MAGICLINK);
             try {
                 if (JWTValidator.validate(userToken, context.getTenantDomain())) {
                     String username = JWTValidator.getUsername(userToken);
@@ -146,15 +148,16 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
     @Override
     public boolean canHandle(HttpServletRequest httpServletRequest) {
 
-        return StringUtils.isNotEmpty(httpServletRequest.getParameter("mL")) &&
-                StringUtils.isEmpty(httpServletRequest.getParameter("mL"))
-                || StringUtils.isNotEmpty(httpServletRequest.getParameter("mL"));
+        return StringUtils.isNotEmpty(httpServletRequest.getParameter(MagicLinkAuthenticatorConstants.MAGICLINK)) &&
+                StringUtils.isEmpty(httpServletRequest.getParameter(MagicLinkAuthenticatorConstants.MAGICLINK))
+                || StringUtils.isNotEmpty(httpServletRequest.getParameter(MagicLinkAuthenticatorConstants.MAGICLINK));
     }
 
     @Override
     public String getContextIdentifier(HttpServletRequest httpServletRequest) {
 
-        return JWTValidator.getSessionDataKey(httpServletRequest.getParameter("mL"));
+        return JWTValidator.getSessionDataKey(httpServletRequest.getParameter(MagicLinkAuthenticatorConstants
+                .MAGICLINK));
     }
 
     /**
@@ -194,4 +197,5 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         }
     }
 }
+
 

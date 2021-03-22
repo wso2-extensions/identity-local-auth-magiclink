@@ -25,4 +25,6 @@ public abstract class MagicLinkAuthenticatorConstants {
     public static final String AUTHENTICATOR_NAME = "MagicLinkAuthenticator";
     public static final String AUTHENTICATOR_FRIENDLY_NAME = "MagicLink";
     public static final String MAGICLINK_NOTIFICATION_PAGE = "authenticationendpoint/MagicLinkNotification.do";
+    public static final String MAGICLINK ="mL";
 }
+

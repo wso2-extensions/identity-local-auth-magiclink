@@ -38,6 +38,8 @@ public class JWTGenerator {
     private final JWSAlgorithm signatureAlgorithm = new JWSAlgorithm(JWSAlgorithm.RS256.getName());
 
     /**
+     * This method is used to create JWT claim set.
+     *
      * @param username       The username of the user.
      * @param sessionDataKey The sessionDataKey.
      * @param iss            The issuer of token.
@@ -63,6 +65,8 @@ public class JWTGenerator {
     }
 
     /**
+     * This method is used to generate JWT signed token.
+     *
      * @param tenantDomain   Tenant domain of the user.
      * @param username       Username of the user.
      * @param sessionDataKey The sessionDataKey.
@@ -86,5 +90,6 @@ public class JWTGenerator {
         return jwt;
     }
 }
+
 
 

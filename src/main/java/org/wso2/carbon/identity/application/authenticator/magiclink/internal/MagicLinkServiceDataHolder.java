@@ -83,3 +83,4 @@ public class MagicLinkServiceDataHolder {
         this.identityGovernanceService = identityGovernanceService;
     }
 }
+
