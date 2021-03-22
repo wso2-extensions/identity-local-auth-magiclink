@@ -196,6 +196,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             throw new AuthenticationFailedException(errorMsg, var12.getCause());
         }
     }
+    
 }
 
 
