@@ -17,7 +17,6 @@
  */
 package org.wso2.carbon.identity.application.authenticator.magiclink.internal;
 
-import org.osgi.framework.BundleContext;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.user.core.service.RealmService;
@@ -29,7 +28,6 @@ public class MagicLinkServiceDataHolder {
 
     private static final MagicLinkServiceDataHolder MagicLinkServiceDataHolder = new MagicLinkServiceDataHolder();
 
-    private BundleContext bundleContext;
     private IdentityEventService identityEventService;
     private RealmService realmService;
     private IdentityGovernanceService identityGovernanceService;

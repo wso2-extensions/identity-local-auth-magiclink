@@ -43,9 +43,7 @@ Follow the steps below to configure WSO2 IS to send email once the Magic Link Au
 3. Add the following configurations to the <IS_HOME>/repository/conf/identity/application-authentication.xml  file  under the section.
 
         <AuthenticatorConfig name="MagicLinkAuthenticator" enabled="true">     
- 	     <Parameter name="Duration">180000</Parameter>
-           <Parameter name="Issuer">ServerOrigin</Parameter>
-           <Parameter name="Audience">ServerOrigin</Parameter>
+           <Parameter name="ExpiryTime">300</Parameter>
         </AuthenticatorConfig>
     
     Hint : Edit the file <IS_HOME>/repository/resources/conf/templates/repository/conf/identity/application-authentication.xml.j2
@@ -207,7 +205,7 @@ parameters as follows.
                         <table align="left" cellpadding="0" cellspacing="0" border="0" style="border-radius: 4px; background-color: #ff5000;">
                             <tr>
                                 <td style="border-radius: 6px;  padding: 14px 0px;">
-                                    <a href="{{carbon.product-url}}/commonauth?mL={{magicToken}}"
+                                    <a href="{{carbon.product-url}}/commonauth?mlt={{magicToken}}"
                                        target="_blank" style="width: 230px; font-family: 'Nunito Sans', Arial, Verdana, Helvetica, sans-serif;  font-size: 18px; line-height: 21px; font-weight: 600; color: #fff; text-decoration: none; background-color: #ff5000; text-align: center; display: inline-block;cursor: pointer;">Click</a>
                                 </td>
                             </tr>

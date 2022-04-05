@@ -22,9 +22,20 @@ package org.wso2.carbon.identity.application.authenticator.magiclink;
  */
 public abstract class MagicLinkAuthenticatorConstants {
 
+    /**
+     * Private Constructor will prevent the instantiation of this class directly.
+     */
+    private MagicLinkAuthenticatorConstants() {
+    }
+
     public static final String AUTHENTICATOR_NAME = "MagicLinkAuthenticator";
     public static final String AUTHENTICATOR_FRIENDLY_NAME = "MagicLink";
-    public static final String MAGICLINK_NOTIFICATION_PAGE = "authenticationendpoint/MagicLinkNotification.do";
-    public static final String MAGICLINK ="mL";
+    public static final String MAGIC_LINK_NOTIFICATION_PAGE = "authenticationendpoint/MagicLinkNotification.do";
+    public static final String MAGIC_LINK_TOKEN = "mlt";
+    public static final String EXPIRY_TIME = "ExpiryTime";
+    // Default expiry time in seconds.
+    public static final long DEFAULT_EXPIRY_TIME = 300;
+    public static final int TOKEN_LENGTH = 32;
+
 }
 
