@@ -36,7 +36,7 @@ import org.wso2.carbon.user.core.service.RealmService;
  * Service component related to magic link authentication flow.
  */
 @Component(
-        name = "identity.application.authenticator.magiclink.component",
+        name = "org.wso2.carbon.identity.application.authenticator.magiclink.component",
         immediate = true)
 public class MagicLinkAuthenticatorServiceComponent {
 
@@ -49,7 +49,7 @@ public class MagicLinkAuthenticatorServiceComponent {
             MagicLinkAuthenticator magicAuth = new MagicLinkAuthenticator();
             ctxt.getBundleContext().registerService(ApplicationAuthenticator.class.getName(), magicAuth, null);
             if (log.isDebugEnabled()) {
-                log.info("MagicLinkAuthenticator bundle is activated");
+                log.info("MagicLink Authenticator bundle is activated");
             }
         } catch (Throwable e) {
             log.error("MagicLink Authenticator bundle activation Failed", e);
@@ -83,7 +83,7 @@ public class MagicLinkAuthenticatorServiceComponent {
     }
 
     @Reference(
-            name = "IdentityGovernanceService",
+            name = "identity.governance.service",
             service = org.wso2.carbon.identity.governance.IdentityGovernanceService.class,
             cardinality = ReferenceCardinality.MANDATORY,
             policy = ReferencePolicy.DYNAMIC,
@@ -99,7 +99,7 @@ public class MagicLinkAuthenticatorServiceComponent {
     }
 
     @Reference(
-            name = "EventMgtService",
+            name = "identity.event.service",
             service = org.wso2.carbon.identity.event.services.IdentityEventService.class,
             cardinality = ReferenceCardinality.MANDATORY,
             policy = ReferencePolicy.DYNAMIC,
