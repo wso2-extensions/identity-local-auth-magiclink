@@ -205,7 +205,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         properties.put("userstore-domain", userStoreDomain);
         properties.put("tenant-domain", tenantDomain);
         properties.put("magicToken", magicToken);
-        properties.put("TEMPLATE_TYPE", "magiclink");
+        properties.put("TEMPLATE_TYPE", "magicLink");
         Event identityMgtEvent = new Event(eventName, properties);
         try {
             MagicLinkServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
