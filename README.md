@@ -164,7 +164,7 @@ parameters as follows.
 
 |Parameter Name| Value|
 |:---|:---|
-|**Template Name**|magiclink|
+|**Template Name**|magicLink|
 |**Select the Template Language**|English (United States)|
 |**Email Content Type**|text/html|
 |**Subject**|WSO2 - Magic Link for Sign In|
