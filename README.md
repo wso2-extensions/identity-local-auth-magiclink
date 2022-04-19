@@ -48,19 +48,19 @@ Follow the steps below to configure WSO2 IS to send email once the Magic Link Au
     
     Hint : Edit the file <IS_HOME>/repository/resources/conf/templates/repository/conf/identity/application-authentication.xml.j2
 
-4. Create the MagicLinkNotification.jsp file by copying the code in [this](MagicLinkNotification.md) file 
+4. Create the magic_link_notification.jsp file by copying the code in [this](magic_link_notification.md) file 
    and add the file inside the <IS_HOME>/repository/deployment/server/webapps/authenticationendpoint
    
 5. Add the following configurations inside <IS_HOME>/repository/deployment/server/webapps/authenticationendpoint/WEB-INF/web.xml
 
             <servlet>
-               <servlet-name>MagicLinkNotification.do</servlet-name>
-               <jsp-file>/MagicLinkNotification.jsp</jsp-file>
+               <servlet-name>magic_link_notification.do</servlet-name>
+               <jsp-file>/magic_link_notification.jsp</jsp-file>
             </servlet>
   
            <servlet-mapping>
-               <servlet-name>MagicLinkNotification.do</servlet-name>
-               <url-pattern>/MagicLinkNotification.do</url-pattern>
+               <servlet-name>magic_link_notification.do</servlet-name>
+               <url-pattern>/magic_link_notification.do</url-pattern>
            </servlet-mapping>
     
 7.Start WSO2 IS
