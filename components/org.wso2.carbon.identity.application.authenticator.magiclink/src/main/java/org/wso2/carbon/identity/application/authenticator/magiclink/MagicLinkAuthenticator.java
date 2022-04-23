@@ -76,22 +76,21 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             AuthenticationContext context) throws AuthenticationFailedException {
 
         User user = getUser(context.getLastAuthenticatedUser());
-        if (user == null) {
-            throw new AuthenticationFailedException("Error while identifying the user.");
-        }
-        MagicLinkAuthContextData magicLinkAuthContextData = new MagicLinkAuthContextData();
-        String magicToken = TokenGenerator.generateToken(MagicLinkAuthenticatorConstants.TOKEN_LENGTH);
-        magicLinkAuthContextData.setMagicToken(magicToken);
-        magicLinkAuthContextData.setCreatedTimestamp(System.currentTimeMillis());
-        magicLinkAuthContextData.setUser(user);
-        magicLinkAuthContextData.setSessionDataKey(context.getContextIdentifier());
+        if (user != null) {
+            MagicLinkAuthContextData magicLinkAuthContextData = new MagicLinkAuthContextData();
+            String magicToken = TokenGenerator.generateToken(MagicLinkAuthenticatorConstants.TOKEN_LENGTH);
+            magicLinkAuthContextData.setMagicToken(magicToken);
+            magicLinkAuthContextData.setCreatedTimestamp(System.currentTimeMillis());
+            magicLinkAuthContextData.setUser(user);
+            magicLinkAuthContextData.setSessionDataKey(context.getContextIdentifier());
 
-        MagicLinkAuthContextCacheKey cacheKey = new MagicLinkAuthContextCacheKey(magicToken);
-        MagicLinkAuthContextCacheEntry cacheEntry = new MagicLinkAuthContextCacheEntry(magicLinkAuthContextData);
-        MagicLinkAuthContextCache.getInstance().addToCache(cacheKey, cacheEntry);
+            MagicLinkAuthContextCacheKey cacheKey = new MagicLinkAuthContextCacheKey(magicToken);
+            MagicLinkAuthContextCacheEntry cacheEntry = new MagicLinkAuthContextCacheEntry(magicLinkAuthContextData);
+            MagicLinkAuthContextCache.getInstance().addToCache(cacheKey, cacheEntry);
 
-        if (StringUtils.isNotEmpty(magicToken)) {
-            triggerEvent(user.getUsername(), user.getUserStoreDomain(), user.getTenantDomain(), magicToken);
+            if (StringUtils.isNotEmpty(magicToken)) {
+                triggerEvent(user.getUsername(), user.getUserStoreDomain(), user.getTenantDomain(), magicToken);
+            }
         }
         try {
             String url = ServiceURLBuilder.create()
