@@ -47,11 +47,14 @@ import org.wso2.carbon.user.core.util.UserCoreUtil;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.USERNAME_CLAIM;
+import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.BLOCKED_USERSTORE_DOMAINS_LIST;
+import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.BLOCKED_USERSTORE_DOMAINS_SEPARATOR;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.DEFAULT_EXPIRY_TIME;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.EXPIRY_TIME;
 
@@ -89,7 +92,8 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             MagicLinkAuthContextCache.getInstance().addToCache(cacheKey, cacheEntry);
 
             if (StringUtils.isNotEmpty(magicToken)) {
-                triggerEvent(user.getUsername(), user.getUserStoreDomain(), user.getTenantDomain(), magicToken);
+                triggerEvent(user.getUsername(), user.getUserStoreDomain(), user.getTenantDomain(), magicToken,
+                        context.getServiceProviderName());
             }
         }
         try {
@@ -193,10 +197,11 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
      * @param userStoreDomain The serStoreDomain of the user.
      * @param tenantDomain    The tenantDomain of the user.
      * @param magicToken      The magicToken sent to email.
+     * @param applicationName The application name.
      * @throws AuthenticationFailedException In occasions of failing to send the email to the user.
      */
-    protected void triggerEvent(String username, String userStoreDomain, String tenantDomain, String magicToken)
-            throws AuthenticationFailedException {
+    protected void triggerEvent(String username, String userStoreDomain, String tenantDomain, String magicToken,
+            String applicationName) throws AuthenticationFailedException {
 
         String eventName = "TRIGGER_NOTIFICATION";
         HashMap<String, Object> properties = new HashMap();
@@ -205,6 +210,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         properties.put("tenant-domain", tenantDomain);
         properties.put("magicToken", magicToken);
         properties.put("TEMPLATE_TYPE", "magicLink");
+        properties.put("application-name", applicationName);
         Event identityMgtEvent = new Event(eventName, properties);
         try {
             MagicLinkServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
@@ -251,6 +257,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                     UserStoreManager userStoreManager = (UserStoreManager) userRealm.getUserStoreManager();
                     List<User> userList = ((AbstractUserStoreManager) userStoreManager).getUserListWithID(
                             USERNAME_CLAIM, authenticatedUser.getUserName(), null);
+                    userList = getValidUsers(userList);
                     if (CollectionUtils.isEmpty(userList)) {
                         return null;
                     }
@@ -274,5 +281,37 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             }
         }
         return user;
+    }
+
+    /**
+     * This method will be deprecated soon.
+     *
+     * @param userList Users list.
+     * @return A valid users list after removing blocked users.
+     */
+    private List<User> getValidUsers(List<User> userList) {
+
+        List<String> blockedUserStoreDomainsList = getBlockedUserStoreDomainsList();
+        if (CollectionUtils.isEmpty(blockedUserStoreDomainsList)) {
+            return userList;
+        }
+        List<User> validUserList = new ArrayList<>();
+        for (User user : userList) {
+            if (!blockedUserStoreDomainsList.contains(user.getUserStoreDomain())) {
+                validUserList.add(user);
+            }
+        }
+        return validUserList;
+    }
+
+    private List<String> getBlockedUserStoreDomainsList() {
+
+        List<String> blockedUserStoreDomainsList = new ArrayList<>();
+        if (StringUtils.isNotBlank(getAuthenticatorConfig().getParameterMap().get(BLOCKED_USERSTORE_DOMAINS_LIST))) {
+            CollectionUtils.addAll(blockedUserStoreDomainsList,
+                    StringUtils.split(getAuthenticatorConfig().getParameterMap().get(BLOCKED_USERSTORE_DOMAINS_LIST),
+                            BLOCKED_USERSTORE_DOMAINS_SEPARATOR));
+        }
+        return blockedUserStoreDomainsList;
     }
 }
