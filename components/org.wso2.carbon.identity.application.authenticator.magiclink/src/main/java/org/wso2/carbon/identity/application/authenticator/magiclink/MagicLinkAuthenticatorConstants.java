@@ -33,6 +33,8 @@ public abstract class MagicLinkAuthenticatorConstants {
     public static final String MAGIC_LINK_NOTIFICATION_PAGE = "authenticationendpoint/magic_link_notification.do";
     public static final String MAGIC_LINK_TOKEN = "mlt";
     public static final String EXPIRY_TIME = "ExpiryTime";
+    public static final String BLOCKED_USERSTORE_DOMAINS_LIST = "BlockedUserStoreDomains";
+    public static final String BLOCKED_USERSTORE_DOMAINS_SEPARATOR = ",";
     // Default expiry time in seconds.
     public static final long DEFAULT_EXPIRY_TIME = 300;
     public static final int TOKEN_LENGTH = 32;
