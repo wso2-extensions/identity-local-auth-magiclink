@@ -92,8 +92,10 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             MagicLinkAuthContextCache.getInstance().addToCache(cacheKey, cacheEntry);
 
             if (StringUtils.isNotEmpty(magicToken)) {
+                String expiryTime =
+                        TimeUnit.SECONDS.toMinutes(getExpiryTime()) + " " + TimeUnit.MINUTES.name().toLowerCase();
                 triggerEvent(user.getUsername(), user.getUserStoreDomain(), user.getTenantDomain(), magicToken,
-                        context.getServiceProviderName());
+                        context.getServiceProviderName(), expiryTime);
             }
         }
         try {
@@ -198,10 +200,11 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
      * @param tenantDomain    The tenantDomain of the user.
      * @param magicToken      The magicToken sent to email.
      * @param applicationName The application name.
+     * @param expiryTime      The expiry time.
      * @throws AuthenticationFailedException In occasions of failing to send the email to the user.
      */
     protected void triggerEvent(String username, String userStoreDomain, String tenantDomain, String magicToken,
-            String applicationName) throws AuthenticationFailedException {
+            String applicationName, String expiryTime) throws AuthenticationFailedException {
 
         String eventName = "TRIGGER_NOTIFICATION";
         HashMap<String, Object> properties = new HashMap();
@@ -211,6 +214,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         properties.put("magicToken", magicToken);
         properties.put("TEMPLATE_TYPE", "magicLink");
         properties.put("application-name", applicationName);
+        properties.put("expiry-time", expiryTime);
         Event identityMgtEvent = new Event(eventName, properties);
         try {
             MagicLinkServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
