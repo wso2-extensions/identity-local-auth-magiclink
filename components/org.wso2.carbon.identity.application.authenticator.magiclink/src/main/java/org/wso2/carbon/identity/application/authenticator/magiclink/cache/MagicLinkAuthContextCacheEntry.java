@@ -19,7 +19,7 @@
 package org.wso2.carbon.identity.application.authenticator.magiclink.cache;
 
 import org.wso2.carbon.identity.application.authenticator.magiclink.model.MagicLinkAuthContextData;
-import org.wso2.carbon.identity.core.cache.CacheEntry;
+import org.wso2.carbon.identity.application.common.cache.CacheEntry;
 
 /**
  * Wrapper object to cache {@link MagicLinkAuthContextData}
