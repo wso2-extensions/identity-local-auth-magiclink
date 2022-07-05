@@ -20,7 +20,7 @@ package org.wso2.carbon.identity.application.authenticator.magiclink.cache;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.identity.application.authentication.framework.cache.AuthenticationBaseCache;
+import org.wso2.carbon.identity.application.common.cache.BaseCache;
 import org.wso2.carbon.identity.application.authentication.framework.store.SessionDataStore;
 import org.wso2.carbon.identity.application.authenticator.magiclink.model.MagicLinkAuthContextData;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
@@ -29,7 +29,7 @@ import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
  * Cache for {@link MagicLinkAuthContextData}
  */
 public class MagicLinkAuthContextCache
-        extends AuthenticationBaseCache<MagicLinkAuthContextCacheKey, MagicLinkAuthContextCacheEntry> {
+        extends BaseCache<MagicLinkAuthContextCacheKey, MagicLinkAuthContextCacheEntry> {
 
     private static Log log = LogFactory.getLog(MagicLinkAuthContextCache.class);
     private static final String CACHE_NAME = "MagicLinkAuthContextCache";

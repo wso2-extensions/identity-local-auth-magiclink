@@ -207,11 +207,11 @@
         <import.package.version.commons.logging>[1.2.0,2.0.0)</import.package.version.commons.logging>
         <osgi.framework.imp.pkg.version.range>[1.7.0, 2.0.0)</osgi.framework.imp.pkg.version.range>
         <carbon.base.imp.pkg.version.range>[1.0.0, 2.0.0)</carbon.base.imp.pkg.version.range>
-        <carbon.identity.framework.imp.pkg.version.range>[5.20.0, 6.0.0)
+        <carbon.identity.framework.imp.pkg.version.range>[5.18.0, 6.0.0)
         </carbon.identity.framework.imp.pkg.version.range>
         <carbon.kernel.package.import.version.range>[4.6.0, 5.0.0)</carbon.kernel.package.import.version.range>
         <carbon.user.api.imp.pkg.version.range>[1.0.1, 2.0.0)</carbon.user.api.imp.pkg.version.range>
-        <identity.governance.imp.pkg.version.range>[1.5.0, 2.0.0)</identity.governance.imp.pkg.version.range>
+        <identity.governance.imp.pkg.version.range>[1.4.0, 2.0.0)</identity.governance.imp.pkg.version.range>
 
         <findbugs-maven-plugin.version>3.0.5</findbugs-maven-plugin.version>
         <maven.bundle.plugin.version>3.2.0</maven.bundle.plugin.version>
