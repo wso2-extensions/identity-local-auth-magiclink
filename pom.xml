@@ -25,7 +25,7 @@
     <groupId>org.wso2.carbon.identity.local.auth.magiclink</groupId>
     <artifactId>identity-local-auth-magiclink</artifactId>
     <packaging>pom</packaging>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.0.2-SNAPSHOT</version>
     <name>WSO2 Carbon - MagicLink Authenticator</name>
     <scm>
         <url>https://github.com/wso2-extensions/identity-local-auth-magiclink.git</url>
