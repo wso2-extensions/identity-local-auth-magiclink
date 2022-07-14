@@ -175,7 +175,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
 
         String magicToken = request.getParameter(MagicLinkAuthenticatorConstants.MAGIC_LINK_TOKEN);
 
-        if (magicToken == null) {
+        if (StringUtils.isEmpty(magicToken)) {
             return null;
         }
 
