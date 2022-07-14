@@ -175,6 +175,10 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
 
         String magicToken = request.getParameter(MagicLinkAuthenticatorConstants.MAGIC_LINK_TOKEN);
 
+        if (magicToken == null) {
+            return null;
+        }
+
         MagicLinkAuthContextCacheKey cacheKey = new MagicLinkAuthContextCacheKey(magicToken);
         MagicLinkAuthContextCacheEntry cacheEntry = MagicLinkAuthContextCache.getInstance().getValueFromCache(cacheKey);
         if (cacheEntry != null) {
