@@ -1,13 +1,11 @@
 # identity-local-auth-magiclink
 Magic link authenticator for WSO2 Identity Server
 
-Download the source code from [here](https://github.com/wso2-incubator/identity-local-auth-magiclink)
+Download the source code from [here](https://github.com/wso2-extensions/identity-local-auth-magiclink)
 
 Navigate to the folder you just downloaded, which contains the pom.xml file and build the source code by running the following command on your terminal.
 
     $ mvn clean install
-
-Copy the org.wso2.carbon.identity.application.authenticator.magiclink-1.0.0.jar file found inside the target folder and paste it in the <IS_HOME>/repository/components/dropins folder.
 
 # Configuring Magic Link Authenticator
 This section provides the instructions to configure Magic Link Authenticator in WSO2 Identity Server (WSO2 IS). The Magic Link Authentication is a password-less authentication implemented by sending an embedded token via a link in email. 
@@ -18,7 +16,6 @@ Let's take a look at the tasks you need to follow to configure Magic Link Authen
 - [Configure the Service Provider](#configure-the-service-provider)
 - [Deploy the sample web application](#deploy-the-sample-web-application)
 - [Create a user and update the email address of the user](#create-a-user-and-update-the-email-address-of-the-user)
-- [Using HTML Templates in Emails](#Using-HTML-Templates-in-Emails)
  
 **Before you begin!**
 To ensure you get the full understanding of configuring Magic Link Authenticator with WSO2 IS, the sample pickup-dispatch application is used in this use case. The samples run on the Apache Tomcat server and are written based on Servlet 3.0. Therefore, download Tomcat 8.x from here. Install Apache Maven to build the samples.
@@ -32,38 +29,15 @@ Follow the steps below to configure WSO2 IS to send email once the Magic Link Au
 2. Add the following properties to the deployment.toml file in the IS_HOME/repository/conf folder to configure the email server.
       
             [output_adapter.email]
-            from_address= "wso2iamtest@gmail.com"
-            username= "wso2iamtest"
-            password= "Wso2@iam70"
-            hostname= "smtp.gmail.com"
+            from_address= "<sample-email@zohomail.com>"
+            username= "<sample-email@zohomail.com>"
+            password= "<password>"
+            hostname= "smtp.zoho.com"
             port= 587
             enable_start_tls= true
             enable_authentication= true
  
-3. Add the following configurations to the <IS_HOME>/repository/conf/identity/application-authentication.xml  file  under the section.
-
-        <AuthenticatorConfig name="MagicLinkAuthenticator" enabled="true">     
-           <Parameter name="ExpiryTime">300</Parameter>
-        </AuthenticatorConfig>
-    
-    Hint : Edit the file <IS_HOME>/repository/resources/conf/templates/repository/conf/identity/application-authentication.xml.j2
-
-4. Create the magic_link_notification.jsp file by copying the code in [this](magic_link_notification.md) file 
-   and add the file inside the <IS_HOME>/repository/deployment/server/webapps/authenticationendpoint
-   
-5. Add the following configurations inside <IS_HOME>/repository/deployment/server/webapps/authenticationendpoint/WEB-INF/web.xml
-
-            <servlet>
-               <servlet-name>magic_link_notification.do</servlet-name>
-               <jsp-file>/magic_link_notification.jsp</jsp-file>
-            </servlet>
-  
-           <servlet-mapping>
-               <servlet-name>magic_link_notification.do</servlet-name>
-               <url-pattern>/magic_link_notification.do</url-pattern>
-           </servlet-mapping>
-    
-7.Start WSO2 IS
+3. Start WSO2 IS
 
 ### Configure the Service Provider
 
@@ -152,106 +126,20 @@ Follow the steps given below to update the user's email address.
 
 7. Click Update.
 
-### Using HTML Templates in Emails
- 
-1. Login to the Carbon Console and Goto **Manage > Email Templates > Add** and click on **Add Email Template Type** to add a 
-new Email Template type. 
 
-2. Use **magiclink** as the **Template Display Name** and click **Add**.
-3. Goto **Manage > Email Templates > Add** and click on **Add Email Template**. 
-4. Select the **magiclink** template type from the **Email Template Type** dropdown list and complete the form with 
-parameters as follows.
+# Try it out
 
-|Parameter Name| Value|
-|:---|:---|
-|**Template Name**|magicLink|
-|**Select the Template Language**|English (United States)|
-|**Email Content Type**|text/html|
-|**Subject**|WSO2 - Magic Link for Sign In|
-|**Email Body**|Refer [Email Template](#email-template)| 
-|**Email Footer**|---|
+1. Go to http://<TOMCAT_HOST>:<TOMCAT_PORT>/pickup-dispatch/oauth2client (http://localhost.com:8080/pickup-dispatch/oauth2client) on your browser.
 
-5. Click **Add**.
+2. Click Login.
 
-### Email Template
-      <table align="center" cellpadding="0" cellspacing="0" border="0" width="100%"bgcolor="#f0f0f0">
-            <tr>
-            <td style="padding: 30px 30px 20px 30px;">
-                <table cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="#ffffff" style="max-width: 650px; margin: auto;">
-                <tr>
-                    <td colspan="2" align="center" style="background-color: #333; padding: 40px;">
-                        <a href="http://wso2.com/" target="_blank"><img src="http://cdn.wso2.com/wso2/newsletter/images/nl-2017/wso2-logo-transparent.png" border="0" /></a>
-                    </td>
-                </tr>
-                <tr>
-                    <td colspan="2" align="center" style="padding: 50px 50px 0px 50px;">
-                        <h1 style="padding-right: 0em; margin: 0; line-height: 40px; font-weight:300; font-family: 'Nunito Sans', Arial, Verdana, Helvetica, sans-serif; color: #666; text-align: left; padding-bottom: 1em;">
-                          WSO2 - Magic Link for Sign In   
-                        </h1>
-                    </td>
-                </tr>
-                <tr>
-                    <td style="text-align: left; padding: 0px 50px 20px 50px;" valign="top">
-                        <p style="font-size: 18px; margin: 0; line-height: 24px; font-family: 'Nunito Sans', Arial, Verdana, Helvetica, sans-serif; color: #666; text-align: left; padding-bottom: 3%;">
-                            Hi {{user-name}},
-                        </p>
-                        <p style="font-size: 18px; margin: 0; line-height: 24px; font-family: 'Nunito Sans', Arial, Verdana, Helvetica, sans-serif; color: #666; text-align: left; padding-bottom: 3%;">
-                            Please click the button below to confirm your account.
-                        </p>
-                    </td>
-                </tr>
-                <tr>
-                    <td style="padding: 0px 50px 0px 50px; text-align: left;">
-                        <table align="left" cellpadding="0" cellspacing="0" border="0" style="border-radius: 4px; background-color: #ff5000;">
-                            <tr>
-                                <td style="border-radius: 6px;  padding: 14px 0px;">
-                                    <a href="{{carbon.product-url}}/commonauth?mlt={{magicToken}}"
-                                       target="_blank" style="width: 230px; font-family: 'Nunito Sans', Arial, Verdana, Helvetica, sans-serif;  font-size: 18px; line-height: 21px; font-weight: 600; color: #fff; text-decoration: none; background-color: #ff5000; text-align: center; display: inline-block;cursor: pointer;">Click</a>
-                                </td>
-                            </tr>
-                        </table>
-                    </td>
-                </tr>
-                <tr>
-                    <td style="text-align: left; padding: 30px 50px 50px 50px;" valign="top">
-                        <p style="font-size: 18px; margin: 0; line-height: 24px; font-family: 'Nunito Sans', Arial, Verdana, Helvetica, sans-serif; color: #505050; text-align: left;">
-                            Thanks,<br/>WSO2 Identity Server Team
-                        </p>
-                    </td>
-                </tr>
-                <tr>
-                    <td colspan="2" align="center" style="padding: 20px 40px 40px 40px;" bgcolor="#f0f0f0">
-                        <p style="font-size: 12px; margin: 0; line-height: 24px; font-family: 'Nunito Sans', Arial, Verdana, Helvetica, sans-serif; color: #777;">
-                            &copy;2021
-                            <a href="http://wso2.com/" target="_blank" style="color: #777; text-decoration: none">WSO2</a>
-                            <br>
-                            787 Castro Street, Mountain View, CA 94041.
-                        </p>
-                    </td>
-                </tr>
-                </table>
-            </td>
-            </tr>
-        </table>
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
+3. Enter the username of the newly created user.
+
+4. You will receive an email to the user’s email address added previously.
+
+5. Click the button in email and you will be redirected to the pickup-dispatch app logged in.
+
+   ![](images/email_received.png)
 
 
-
-
-
-
-
-
-
- 
- 
- 
 
