@@ -35,9 +35,15 @@
     </scm>
     <modules>
         <module>components/org.wso2.carbon.identity.application.authenticator.magiclink</module>
+        <module>features/org.wso2.carbon.identity.local.auth.magiclink.server.feature</module>
     </modules>
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.local.auth.magiclink</groupId>
+                <artifactId>org.wso2.carbon.identity.application.authenticator.magiclink</artifactId>
+                <version>${project.version}</version>
+            </dependency>
             <dependency>
                 <groupId>org.wso2.carbon.identity.framework</groupId>
                 <artifactId>org.wso2.carbon.identity.mgt</artifactId>
@@ -194,6 +200,7 @@
         <identity.inbound.auth.oauth.version>6.4.126</identity.inbound.auth.oauth.version>
         <identity.outbound.auth.oidc.version>5.1.2</identity.outbound.auth.oidc.version>
         <commons-logging.version>4.4.3</commons-logging.version>
+        <carbon.p2.plugin.version>1.5.3</carbon.p2.plugin.version>
 
         <!--Test Dependencies-->
         <testng.version>6.9.10</testng.version>
