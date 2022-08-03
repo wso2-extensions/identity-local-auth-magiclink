@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2022, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2022, WSO2 LLC. (http://www.wso2.org) All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -226,7 +226,9 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             String errorMsg = String.format(
                     "Error occurred while sending the notification for the user: %s in the tenant: %s", username,
                     tenantDomain);
-            throw new AuthenticationFailedException(errorMsg, e);
+            if (log.isDebugEnabled()) {
+                log.debug(errorMsg, e);
+            }
         }
     }
 
