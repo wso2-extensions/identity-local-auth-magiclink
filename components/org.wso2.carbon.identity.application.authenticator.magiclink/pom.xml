@@ -20,7 +20,7 @@
         <groupId>org.wso2.carbon.identity.local.auth.magiclink</groupId>
         <artifactId>identity-local-auth-magiclink</artifactId>
         <relativePath>../../pom.xml</relativePath>
-        <version>1.0.194-SNAPSHOT</version>
+        <version>1.0.194</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
