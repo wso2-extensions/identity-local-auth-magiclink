@@ -53,6 +53,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.USERNAME_CLAIM;
+import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.EMAIL_ADDRESS_CLAIM;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.BLOCKED_USERSTORE_DOMAINS_LIST;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.BLOCKED_USERSTORE_DOMAINS_SEPARATOR;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.DEFAULT_EXPIRY_TIME;
@@ -267,6 +268,10 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                     UserStoreManager userStoreManager = (UserStoreManager) userRealm.getUserStoreManager();
                     List<User> userList = ((AbstractUserStoreManager) userStoreManager).getUserListWithID(
                             USERNAME_CLAIM, authenticatedUser.getUserName(), null);
+                    if (userList.isEmpty()) {
+                        userList = ((AbstractUserStoreManager) userStoreManager).getUserListWithID(
+                                EMAIL_ADDRESS_CLAIM, authenticatedUser.getUserName(), null);
+                    }
                     userList = getValidUsers(userList);
                     if (CollectionUtils.isEmpty(userList)) {
                         return null;
