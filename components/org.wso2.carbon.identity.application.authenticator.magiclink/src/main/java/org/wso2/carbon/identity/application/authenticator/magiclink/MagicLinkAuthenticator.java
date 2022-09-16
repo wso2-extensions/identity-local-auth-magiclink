@@ -283,6 +283,11 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                         }
                         return null;
                     }
+                    // Checking whether the user is a tenant admin.
+                    if (((AbstractUserStoreManager) userStoreManager).getUserIDFromUserName(UserCoreUtil
+                            .removeDomainFromName(userList.get(0).getUsername())) != null) {
+                        return null;
+                    }
                     user = userList.get(0);
                 } else {
                     log.error("Cannot find the user realm for the given tenant: " + tenantDomain);
