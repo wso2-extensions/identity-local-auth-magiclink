@@ -19,6 +19,8 @@ package org.wso2.carbon.identity.application.authenticator.magiclink.internal;
 
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
+import org.wso2.carbon.identity.multi.attribute.login.mgt.MultiAttributeLoginService;
+import org.wso2.carbon.identity.organization.management.service.OrganizationUserResidentResolverService;
 import org.wso2.carbon.user.core.service.RealmService;
 
 /**
@@ -31,6 +33,8 @@ public class MagicLinkServiceDataHolder {
     private IdentityEventService identityEventService;
     private RealmService realmService;
     private IdentityGovernanceService identityGovernanceService;
+    private MultiAttributeLoginService multiAttributeLoginService;
+    private OrganizationUserResidentResolverService organizationUserResidentResolverService;
 
     private MagicLinkServiceDataHolder() {
 
@@ -59,6 +63,25 @@ public class MagicLinkServiceDataHolder {
     public void setRealmService(RealmService realmService) {
 
         this.realmService = realmService;
+    }
+
+    public MultiAttributeLoginService getMultiAttributeLoginService() {
+
+        return multiAttributeLoginService;
+    }
+
+    public void setMultiAttributeLoginService(MultiAttributeLoginService multiAttributeLoginService) {
+        this.multiAttributeLoginService = multiAttributeLoginService;
+    }
+
+    public OrganizationUserResidentResolverService getOrganizationUserResidentResolverService() {
+
+        return organizationUserResidentResolverService;
+    }
+
+    public void setOrganizationUserResidentResolverService
+            (OrganizationUserResidentResolverService organizationUserResidentResolverService) {
+        this.organizationUserResidentResolverService = organizationUserResidentResolverService;
     }
 
     /**

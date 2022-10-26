@@ -35,6 +35,7 @@ public abstract class MagicLinkAuthenticatorConstants {
     public static final String EXPIRY_TIME = "ExpiryTime";
     public static final String BLOCKED_USERSTORE_DOMAINS_LIST = "BlockedUserStoreDomains";
     public static final String BLOCKED_USERSTORE_DOMAINS_SEPARATOR = ",";
+    public static final String USER_NAME = "username";
     // Default expiry time in seconds.
     public static final long DEFAULT_EXPIRY_TIME = 300;
     public static final int TOKEN_LENGTH = 32;
