@@ -35,10 +35,18 @@ public abstract class MagicLinkAuthenticatorConstants {
     public static final String EXPIRY_TIME = "ExpiryTime";
     public static final String BLOCKED_USERSTORE_DOMAINS_LIST = "BlockedUserStoreDomains";
     public static final String BLOCKED_USERSTORE_DOMAINS_SEPARATOR = ",";
+    public static final String IS_IDF_INITIATED_FROM_MAGIC_LINK_AUTH = "isIdfInitiatedFromMagicLinkAuth";
+    public static final String AUTHENTICATORS = "&authenticators=";
+    public static final String IDF_HANDLER_NAME = "IdentifierExecutor";
+    public static final String LOCAL = "LOCAL";
     public static final String USER_NAME = "username";
     // Default expiry time in seconds.
     public static final long DEFAULT_EXPIRY_TIME = 300;
     public static final int TOKEN_LENGTH = 32;
+    public static final String SKIP_IDENTIFIER_PRE_PROCESS = "skipIdentifierPreProcess";
+    public static final String RE_CAPTCHA_USER_DOMAIN = "user-domain-recaptcha";
+    public static final String VALIDATE_USERNAME = "ValidateUsername";
+
 
 }
 
