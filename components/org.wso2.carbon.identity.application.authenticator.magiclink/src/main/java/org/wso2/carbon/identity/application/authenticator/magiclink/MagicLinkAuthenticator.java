@@ -18,6 +18,7 @@
 package org.wso2.carbon.identity.application.authenticator.magiclink;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -172,7 +173,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             throw new InvalidCredentialsException(MagicLinkAuthErrorConstants.ErrorMessages.EMPTY_USERNAME.getCode(),
                     MagicLinkAuthErrorConstants.ErrorMessages.EMPTY_USERNAME.getMessage());
         }
-        if (runtimeParams != null) {
+        if (MapUtils.isEmpty(runtimeParams)) {
             String skipPreProcessUsername = runtimeParams
                     .get(MagicLinkAuthenticatorConstants.SKIP_IDENTIFIER_PRE_PROCESS);
             if (Boolean.parseBoolean(skipPreProcessUsername)) {
@@ -231,7 +232,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
 
         String tenantDomain = MultitenantUtils.getTenantDomain(username);
         Map<String, Object> authProperties = context.getProperties();
-        if (authProperties == null) {
+        if (MapUtils.isEmpty(authProperties)) {
             authProperties = new HashMap<>();
             context.setProperties(authProperties);
         }
