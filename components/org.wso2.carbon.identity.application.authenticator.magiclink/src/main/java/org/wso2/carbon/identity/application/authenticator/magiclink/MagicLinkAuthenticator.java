@@ -37,6 +37,7 @@ import org.wso2.carbon.identity.application.authenticator.magiclink.internal.Mag
 import org.wso2.carbon.identity.application.authenticator.magiclink.model.MagicLinkAuthContextData;
 import org.wso2.carbon.identity.application.authenticator.magiclink.util.MagicLinkAuthErrorConstants;
 import org.wso2.carbon.identity.base.IdentityRuntimeException;
+import org.wso2.carbon.identity.central.log.mgt.utils.LoggerUtils;
 import org.wso2.carbon.identity.core.ServiceURLBuilder;
 import org.wso2.carbon.identity.core.URLBuilderException;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
@@ -532,6 +533,11 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
 
                 }
             } catch (OrganizationManagementException e) {
+                LoggerUtils.triggerDiagnosticLogEvent(
+                        MagicLinkAuthenticatorConstants.LogConstants.MAGICLINK_LOCAL_SERVICE, null,
+                        MagicLinkAuthenticatorConstants.LogConstants.FAILED,
+                        "IdentifierHandler failed while trying to resolving user's resident org",
+                        "resolve-user-resident-org", null);
                 if (log.isDebugEnabled()) {
                     log.debug("IdentifierHandler failed while trying to resolving user's resident org", e);
                 }
@@ -541,6 +547,11 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                         e.getMessage(),
                         org.wso2.carbon.identity.application.common.model.User.getUserFromUserName(username), e);
             } catch (UserStoreException e) {
+                LoggerUtils.triggerDiagnosticLogEvent(
+                        MagicLinkAuthenticatorConstants.LogConstants.MAGICLINK_LOCAL_SERVICE, null,
+                        MagicLinkAuthenticatorConstants.LogConstants.FAILED,
+                        "IdentifierHandler failed while trying to authenticate",
+                        "authenticate-user", null);
                 if (log.isDebugEnabled()) {
                     log.debug("IdentifierHandler failed while trying to authenticate", e);
                 }
