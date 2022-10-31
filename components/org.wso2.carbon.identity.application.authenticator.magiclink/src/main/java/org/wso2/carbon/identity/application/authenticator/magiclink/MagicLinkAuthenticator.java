@@ -204,7 +204,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         String tenantAwareUsername = MultitenantUtils.getTenantAwareUsername(username);
         String userId = null;
 
-        // Resolve user from multi attribute login
+        // Resolve user from multi attribute login.
         if (MagicLinkServiceDataHolder.getInstance().getMultiAttributeLoginService()
                 .isEnabled(context.getTenantDomain())) {
             ResolvedUserResult resolvedUserResult = MagicLinkServiceDataHolder.getInstance()
@@ -224,7 +224,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             }
         }
 
-        // Resolve user during B2B flow
+        // Resolve user during B2B flow.
         if (context.getCallerPath() != null && context.getCallerPath().startsWith("/t/")) {
             String requestTenantDomain = context.getUserTenantDomain();
             if (StringUtils.isNotBlank(requestTenantDomain) &&
