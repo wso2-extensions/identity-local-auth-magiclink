@@ -165,6 +165,13 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         }
     }
 
+    /**
+     * This method is used to process the authentication response from identifier handler.
+     *
+     * @param request  The httpServletRequest.
+     * @param context  The authentication context.
+     * @throws AuthenticationFailedException In occasions of failing to validate magicToken.
+     */
     private void processIdfAuthenticationResponse(HttpServletRequest request, AuthenticationContext context)
             throws AuthenticationFailedException {
 
@@ -174,7 +181,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             throw new InvalidCredentialsException(MagicLinkAuthErrorConstants.ErrorMessages.EMPTY_USERNAME.getCode(),
                     MagicLinkAuthErrorConstants.ErrorMessages.EMPTY_USERNAME.getMessage());
         }
-        if (MapUtils.isEmpty(runtimeParams)) {
+        if (MapUtils.isNotEmpty(runtimeParams)) {
             String skipPreProcessUsername = runtimeParams
                     .get(MagicLinkAuthenticatorConstants.SKIP_IDENTIFIER_PRE_PROCESS);
             if (Boolean.parseBoolean(skipPreProcessUsername)) {
@@ -197,7 +204,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         String tenantAwareUsername = MultitenantUtils.getTenantAwareUsername(username);
         String userId = null;
 
-        // resolve user from multi attribute login
+        // Resolve user from multi attribute login
         if (MagicLinkServiceDataHolder.getInstance().getMultiAttributeLoginService()
                 .isEnabled(context.getTenantDomain())) {
             ResolvedUserResult resolvedUserResult = MagicLinkServiceDataHolder.getInstance()
@@ -217,7 +224,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             }
         }
 
-        // resolve user during B2B flow
+        // Resolve user during B2B flow
         if (context.getCallerPath() != null && context.getCallerPath().startsWith("/t/")) {
             String requestTenantDomain = context.getUserTenantDomain();
             if (StringUtils.isNotBlank(requestTenantDomain) &&
@@ -533,11 +540,13 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
 
                 }
             } catch (OrganizationManagementException e) {
-                LoggerUtils.triggerDiagnosticLogEvent(
-                        MagicLinkAuthenticatorConstants.LogConstants.MAGICLINK_LOCAL_SERVICE, null,
-                        MagicLinkAuthenticatorConstants.LogConstants.FAILED,
-                        "IdentifierHandler failed while trying to resolving user's resident org",
-                        "resolve-user-resident-org", null);
+                if (LoggerUtils.isDiagnosticLogsEnabled()) {
+                    LoggerUtils.triggerDiagnosticLogEvent(
+                            MagicLinkAuthenticatorConstants.LogConstants.MAGICLINK_LOCAL_SERVICE, null,
+                            MagicLinkAuthenticatorConstants.LogConstants.FAILED,
+                            "IdentifierHandler failed while trying to resolving user's resident org",
+                            "resolve-user-resident-org", null);
+                }
                 if (log.isDebugEnabled()) {
                     log.debug("IdentifierHandler failed while trying to resolving user's resident org", e);
                 }
@@ -547,11 +556,13 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                         e.getMessage(),
                         org.wso2.carbon.identity.application.common.model.User.getUserFromUserName(username), e);
             } catch (UserStoreException e) {
-                LoggerUtils.triggerDiagnosticLogEvent(
-                        MagicLinkAuthenticatorConstants.LogConstants.MAGICLINK_LOCAL_SERVICE, null,
-                        MagicLinkAuthenticatorConstants.LogConstants.FAILED,
-                        "IdentifierHandler failed while trying to authenticate",
-                        "authenticate-user", null);
+                if (LoggerUtils.isDiagnosticLogsEnabled()) {
+                    LoggerUtils.triggerDiagnosticLogEvent(
+                            MagicLinkAuthenticatorConstants.LogConstants.MAGICLINK_LOCAL_SERVICE, null,
+                            MagicLinkAuthenticatorConstants.LogConstants.FAILED,
+                            "IdentifierHandler failed while trying to authenticate",
+                            "authenticate-user", null);
+                }
                 if (log.isDebugEnabled()) {
                     log.debug("IdentifierHandler failed while trying to authenticate", e);
                 }
