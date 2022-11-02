@@ -25,13 +25,13 @@
     <groupId>org.wso2.carbon.identity.local.auth.magiclink</groupId>
     <artifactId>identity-local-auth-magiclink</artifactId>
     <packaging>pom</packaging>
-    <version>1.1.0</version>
+    <version>2.0.0-SNAPSHOT</version>
     <name>WSO2 Carbon - MagicLink Authenticator</name>
     <scm>
         <url>https://github.com/wso2-extensions/identity-local-auth-magiclink.git</url>
         <developerConnection>scm:git:https://github.com/wso2-extensions/identity-local-auth-magiclink.git</developerConnection>
         <connection>scm:git:https://github.com/wso2-extensions/identity-local-auth-magiclink.git</connection>
-        <tag>v1.1.0</tag>
+        <tag>v2.0.0-SNAPSHOT</tag>
     </scm>
     <modules>
         <module>components/org.wso2.carbon.identity.application.authenticator.magiclink</module>
@@ -194,11 +194,11 @@
         <identity.application.authenticator.magiclink.exp.pkg.version>${project.version}
         </identity.application.authenticator.magiclink.exp.pkg.version>
         <carbon.kernel.version>4.7.0</carbon.kernel.version>
-        <carbon.identity.framework.version>5.23.5</carbon.identity.framework.version>
+        <carbon.identity.framework.version>6.0.0</carbon.identity.framework.version>
         <apache.felix.scr.ds.annotations.version>1.2.10</apache.felix.scr.ds.annotations.version>
         <identity.event.handler.notification.version>1.3.14</identity.event.handler.notification.version>
-        <identity.inbound.auth.oauth.version>6.4.126</identity.inbound.auth.oauth.version>
-        <identity.outbound.auth.oidc.version>5.1.2</identity.outbound.auth.oidc.version>
+        <identity.inbound.auth.oauth.version>7.0.0</identity.inbound.auth.oauth.version>
+        <identity.outbound.auth.oidc.version>6.0.0</identity.outbound.auth.oidc.version>
         <commons-logging.version>4.4.3</commons-logging.version>
         <carbon.p2.plugin.version>1.5.3</carbon.p2.plugin.version>
 
@@ -214,11 +214,11 @@
         <import.package.version.commons.logging>[1.2.0,2.0.0)</import.package.version.commons.logging>
         <osgi.framework.imp.pkg.version.range>[1.7.0, 2.0.0)</osgi.framework.imp.pkg.version.range>
         <carbon.base.imp.pkg.version.range>[1.0.0, 2.0.0)</carbon.base.imp.pkg.version.range>
-        <carbon.identity.framework.imp.pkg.version.range>[5.20.0, 6.0.0)
+        <carbon.identity.framework.imp.pkg.version.range>[6.0.0, 7.0.0)
         </carbon.identity.framework.imp.pkg.version.range>
         <carbon.kernel.package.import.version.range>[4.6.0, 5.0.0)</carbon.kernel.package.import.version.range>
         <carbon.user.api.imp.pkg.version.range>[1.0.1, 2.0.0)</carbon.user.api.imp.pkg.version.range>
-        <identity.governance.imp.pkg.version.range>[1.5.0, 2.0.0)</identity.governance.imp.pkg.version.range>
+        <identity.governance.imp.pkg.version.range>[2.0.0, 3.0.0)</identity.governance.imp.pkg.version.range>
 
         <findbugs-maven-plugin.version>3.0.5</findbugs-maven-plugin.version>
         <maven.bundle.plugin.version>3.2.0</maven.bundle.plugin.version>
