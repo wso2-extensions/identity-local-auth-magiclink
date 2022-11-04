@@ -225,17 +225,11 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         }
 
         // Resolve user during B2B flow.
-        if (context.getCallerPath() != null && context.getCallerPath().startsWith("/t/")) {
-            String requestTenantDomain = context.getUserTenantDomain();
-            if (StringUtils.isNotBlank(requestTenantDomain) &&
-                    !MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equalsIgnoreCase(requestTenantDomain)) {
-                User user = resolveUserFromOrganizationHierarchy(tenantAwareUsername, requestTenantDomain, username);
-                if (user != null) {
-                    tenantAwareUsername = user.getUsername();
-                    username = UserCoreUtil.addTenantDomainToEntry(tenantAwareUsername, user.getTenantDomain());
-                    userId = user.getUserID();
-                }
-            }
+        User orgUser = resolveUserFromOrganizationHierarchy(context, tenantAwareUsername, username);
+        if (orgUser != null) {
+            tenantAwareUsername = orgUser.getUsername();
+            username = UserCoreUtil.addTenantDomainToEntry(tenantAwareUsername, orgUser.getTenantDomain());
+            userId = orgUser.getUserID();
         }
 
         String tenantDomain = MultitenantUtils.getTenantDomain(username);
@@ -249,68 +243,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             String validateUsername = getAuthenticatorConfig().getParameterMap()
                     .get(MagicLinkAuthenticatorConstants.VALIDATE_USERNAME);
             if (Boolean.parseBoolean(validateUsername)) {
-                AbstractUserStoreManager userStoreManager;
-                // Check for the username exists.
-                try {
-                    int tenantId = MagicLinkServiceDataHolder.getInstance()
-                            .getRealmService().getTenantManager().getTenantId(tenantDomain);
-                    UserRealm userRealm = MagicLinkServiceDataHolder.getInstance().getRealmService()
-                            .getTenantUserRealm(tenantId);
-
-                    if (userRealm != null) {
-                        userStoreManager = (AbstractUserStoreManager) userRealm.getUserStoreManager();
-
-                        // If the user id is already resolved from the multi attribute login, we can assume the user
-                        // exists. If not, we will try to resolve the user id, which will indicate if the user exists
-                        // or not.
-                        if (userId == null) {
-                            userId = userStoreManager.getUserIDFromUserName(tenantAwareUsername);
-                        }
-                    } else {
-                        throw new AuthenticationFailedException(
-                                MagicLinkAuthErrorConstants.ErrorMessages
-                                        .CANNOT_FIND_THE_USER_REALM_FOR_THE_GIVEN_TENANT.getCode(), String.format(
-                                MagicLinkAuthErrorConstants.ErrorMessages
-                                        .CANNOT_FIND_THE_USER_REALM_FOR_THE_GIVEN_TENANT.getMessage(), tenantId),
-                                org.wso2.carbon.identity.application.common.model.User.getUserFromUserName(username));
-                    }
-                } catch (IdentityRuntimeException e) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("IdentifierHandler failed while trying to get the tenant ID of the user " +
-                                username, e);
-                    }
-                    throw new AuthenticationFailedException(
-                            MagicLinkAuthErrorConstants.ErrorMessages.INVALID_TENANT_ID_OF_THE_USER.getCode(),
-                            e.getMessage(),
-                            org.wso2.carbon.identity.application.common.model.User.getUserFromUserName(username), e);
-                } catch (org.wso2.carbon.user.api.UserStoreException e) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("IdentifierHandler failed while trying to authenticate", e);
-                    }
-                    throw new AuthenticationFailedException(
-                            MagicLinkAuthErrorConstants.ErrorMessages.USER_STORE_EXCEPTION_WHILE_TRYING_TO_AUTHENTICATE
-                                    .getCode(), e.getMessage(),
-                            org.wso2.carbon.identity.application.common.model.User.getUserFromUserName(username), e);
-                }
-
-                if (userId == null) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("User does not exists");
-                    }
-                    if (IdentityUtil.threadLocalProperties.get()
-                            .get(MagicLinkAuthenticatorConstants.RE_CAPTCHA_USER_DOMAIN) != null) {
-                        username = IdentityUtil.addDomainToName(
-                                username, IdentityUtil.threadLocalProperties.get()
-                                        .get(MagicLinkAuthenticatorConstants.RE_CAPTCHA_USER_DOMAIN).toString());
-                    }
-                    IdentityUtil.threadLocalProperties.get()
-                            .remove(MagicLinkAuthenticatorConstants.RE_CAPTCHA_USER_DOMAIN);
-                    throw new InvalidCredentialsException(
-                            MagicLinkAuthErrorConstants.ErrorMessages.USER_DOES_NOT_EXISTS.getCode(),
-                            MagicLinkAuthErrorConstants.ErrorMessages.USER_DOES_NOT_EXISTS.getMessage(),
-                            org.wso2.carbon.identity.application.common.model.User.getUserFromUserName(username));
-                }
-
+                userId = checkIfUserExists(tenantDomain, tenantAwareUsername, userId, username);
                 //TODO: user tenant domain has to be an attribute in the AuthenticationContext
                 authProperties.put("user-tenant-domain", tenantDomain);
             }
@@ -521,57 +454,133 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         context.addAuthenticatorParams(contextParams);
     }
 
-    private User resolveUserFromOrganizationHierarchy(String tenantAwareUsername, String requestTenantDomain,
-                                                      String username)
+    private User resolveUserFromOrganizationHierarchy(AuthenticationContext context,
+                                                      String tenantAwareUsername, String username)
             throws AuthenticationFailedException {
 
-            try {
-                int tenantId = IdentityTenantUtil.getTenantId(requestTenantDomain);
-                Tenant tenant =
-                        (Tenant) MagicLinkServiceDataHolder.getInstance().getRealmService().getTenantManager()
-                                .getTenant(tenantId);
-                if (tenant != null && StringUtils.isNotBlank(tenant.getAssociatedOrganizationUUID())) {
-                    return MagicLinkServiceDataHolder.getInstance().getOrganizationUserResidentResolverService()
-                                    .resolveUserFromResidentOrganization(tenantAwareUsername, null,
-                                            tenant.getAssociatedOrganizationUUID())
-                                    .orElseThrow(() -> new AuthenticationFailedException(
-                                            MagicLinkAuthErrorConstants.ErrorMessages
-                                                    .USER_NOT_IDENTIFIED_IN_HIERARCHY.getCode()));
+        if (context.getCallerPath() != null && context.getCallerPath().startsWith("/t/")) {
+            String requestTenantDomain = context.getUserTenantDomain();
+            if (StringUtils.isNotBlank(requestTenantDomain) &&
+                    !MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equalsIgnoreCase(requestTenantDomain)) {
+                try {
 
+                    int tenantId = IdentityTenantUtil.getTenantId(requestTenantDomain);
+                    Tenant tenant =
+                            (Tenant) MagicLinkServiceDataHolder.getInstance().getRealmService().getTenantManager()
+                                    .getTenant(tenantId);
+                    if (tenant != null && StringUtils.isNotBlank(tenant.getAssociatedOrganizationUUID())) {
+                        return MagicLinkServiceDataHolder.getInstance().getOrganizationUserResidentResolverService()
+                                .resolveUserFromResidentOrganization(tenantAwareUsername, null,
+                                        tenant.getAssociatedOrganizationUUID())
+                                .orElseThrow(() -> new AuthenticationFailedException(
+                                        MagicLinkAuthErrorConstants.ErrorMessages
+                                                .USER_NOT_IDENTIFIED_IN_HIERARCHY.getCode()));
+
+                    }
+                } catch (OrganizationManagementException e) {
+                    if (LoggerUtils.isDiagnosticLogsEnabled()) {
+                        LoggerUtils.triggerDiagnosticLogEvent(
+                                MagicLinkAuthenticatorConstants.LogConstants.MAGICLINK_LOCAL_SERVICE, null,
+                                MagicLinkAuthenticatorConstants.LogConstants.FAILED,
+                                "IdentifierHandler failed while trying to resolving user's resident org",
+                                "resolve-user-resident-org", null);
+                    }
+                    if (log.isDebugEnabled()) {
+                        log.debug("IdentifierHandler failed while trying to resolving user's resident org", e);
+                    }
+                    throw new AuthenticationFailedException(
+                            MagicLinkAuthErrorConstants.ErrorMessages
+                                    .ORGANIZATION_MGT_EXCEPTION_WHILE_TRYING_TO_RESOLVE_RESIDENT_ORG.getCode(),
+                            e.getMessage(),
+                            org.wso2.carbon.identity.application.common.model.User.getUserFromUserName(username), e);
+                } catch (UserStoreException e) {
+                    if (LoggerUtils.isDiagnosticLogsEnabled()) {
+                        LoggerUtils.triggerDiagnosticLogEvent(
+                                MagicLinkAuthenticatorConstants.LogConstants.MAGICLINK_LOCAL_SERVICE, null,
+                                MagicLinkAuthenticatorConstants.LogConstants.FAILED,
+                                "IdentifierHandler failed while trying to authenticate",
+                                "authenticate-user", null);
+                    }
+                    if (log.isDebugEnabled()) {
+                        log.debug("IdentifierHandler failed while trying to authenticate", e);
+                    }
+                    throw new AuthenticationFailedException(
+                            MagicLinkAuthErrorConstants.ErrorMessages
+                                    .USER_STORE_EXCEPTION_WHILE_TRYING_TO_AUTHENTICATE.getCode(), e.getMessage(),
+                            org.wso2.carbon.identity.application.common.model.User.getUserFromUserName(username), e);
                 }
-            } catch (OrganizationManagementException e) {
-                if (LoggerUtils.isDiagnosticLogsEnabled()) {
-                    LoggerUtils.triggerDiagnosticLogEvent(
-                            MagicLinkAuthenticatorConstants.LogConstants.MAGICLINK_LOCAL_SERVICE, null,
-                            MagicLinkAuthenticatorConstants.LogConstants.FAILED,
-                            "IdentifierHandler failed while trying to resolving user's resident org",
-                            "resolve-user-resident-org", null);
-                }
-                if (log.isDebugEnabled()) {
-                    log.debug("IdentifierHandler failed while trying to resolving user's resident org", e);
-                }
-                throw new AuthenticationFailedException(
-                        MagicLinkAuthErrorConstants.ErrorMessages
-                                .ORGANIZATION_MGT_EXCEPTION_WHILE_TRYING_TO_RESOLVE_RESIDENT_ORG.getCode(),
-                        e.getMessage(),
-                        org.wso2.carbon.identity.application.common.model.User.getUserFromUserName(username), e);
-            } catch (UserStoreException e) {
-                if (LoggerUtils.isDiagnosticLogsEnabled()) {
-                    LoggerUtils.triggerDiagnosticLogEvent(
-                            MagicLinkAuthenticatorConstants.LogConstants.MAGICLINK_LOCAL_SERVICE, null,
-                            MagicLinkAuthenticatorConstants.LogConstants.FAILED,
-                            "IdentifierHandler failed while trying to authenticate",
-                            "authenticate-user", null);
-                }
-                if (log.isDebugEnabled()) {
-                    log.debug("IdentifierHandler failed while trying to authenticate", e);
-                }
-                throw new AuthenticationFailedException(
-                        MagicLinkAuthErrorConstants.ErrorMessages
-                                .USER_STORE_EXCEPTION_WHILE_TRYING_TO_AUTHENTICATE.getCode(), e.getMessage(),
-                        org.wso2.carbon.identity.application.common.model.User.getUserFromUserName(username), e);
             }
+        }
         return null;
+    }
+
+    private String checkIfUserExists(String tenantDomain, String tenantAwareUsername,
+                                     String userId, String username)
+            throws AuthenticationFailedException {
+
+        AbstractUserStoreManager userStoreManager;
+            // Check for the username exists.
+        try {
+            int tenantId = MagicLinkServiceDataHolder.getInstance()
+                    .getRealmService().getTenantManager().getTenantId(tenantDomain);
+            UserRealm userRealm = MagicLinkServiceDataHolder.getInstance().getRealmService()
+                    .getTenantUserRealm(tenantId);
+
+            if (userRealm != null) {
+                userStoreManager = (AbstractUserStoreManager) userRealm.getUserStoreManager();
+
+                // If the user id is already resolved from the multi attribute login, we can assume the user
+                // exists. If not, we will try to resolve the user id, which will indicate if the user exists
+                // or not.
+                if (userId == null) {
+                    userId = userStoreManager.getUserIDFromUserName(tenantAwareUsername);
+                }
+            } else {
+                throw new AuthenticationFailedException(
+                        MagicLinkAuthErrorConstants.ErrorMessages
+                                .CANNOT_FIND_THE_USER_REALM_FOR_THE_GIVEN_TENANT.getCode(), String.format(
+                        MagicLinkAuthErrorConstants.ErrorMessages
+                                .CANNOT_FIND_THE_USER_REALM_FOR_THE_GIVEN_TENANT.getMessage(), tenantId),
+                        org.wso2.carbon.identity.application.common.model.User.getUserFromUserName(username));
+            }
+        } catch (IdentityRuntimeException e) {
+            if (log.isDebugEnabled()) {
+                log.debug("IdentifierHandler failed while trying to get the tenant ID of the user " +
+                        username, e);
+            }
+            throw new AuthenticationFailedException(
+                    MagicLinkAuthErrorConstants.ErrorMessages.INVALID_TENANT_ID_OF_THE_USER.getCode(),
+                    e.getMessage(),
+                    org.wso2.carbon.identity.application.common.model.User.getUserFromUserName(username), e);
+        } catch (org.wso2.carbon.user.api.UserStoreException e) {
+            if (log.isDebugEnabled()) {
+                log.debug("IdentifierHandler failed while trying to authenticate", e);
+            }
+            throw new AuthenticationFailedException(
+                    MagicLinkAuthErrorConstants.ErrorMessages.USER_STORE_EXCEPTION_WHILE_TRYING_TO_AUTHENTICATE
+                            .getCode(), e.getMessage(),
+                    org.wso2.carbon.identity.application.common.model.User.getUserFromUserName(username), e);
+        }
+
+        if (userId == null) {
+            if (log.isDebugEnabled()) {
+                log.debug("User does not exists");
+            }
+            if (IdentityUtil.threadLocalProperties.get()
+                    .get(MagicLinkAuthenticatorConstants.RE_CAPTCHA_USER_DOMAIN) != null) {
+                username = IdentityUtil.addDomainToName(
+                        username, IdentityUtil.threadLocalProperties.get()
+                                .get(MagicLinkAuthenticatorConstants.RE_CAPTCHA_USER_DOMAIN).toString());
+            }
+            IdentityUtil.threadLocalProperties.get()
+                    .remove(MagicLinkAuthenticatorConstants.RE_CAPTCHA_USER_DOMAIN);
+            throw new InvalidCredentialsException(
+                    MagicLinkAuthErrorConstants.ErrorMessages.USER_DOES_NOT_EXISTS.getCode(),
+                    MagicLinkAuthErrorConstants.ErrorMessages.USER_DOES_NOT_EXISTS.getMessage(),
+                    org.wso2.carbon.identity.application.common.model.User.getUserFromUserName(username));
+        }
+
+        return userId;
     }
 
 }
