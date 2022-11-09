@@ -23,10 +23,13 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.authentication.framework.AbstractApplicationAuthenticator;
+import org.wso2.carbon.identity.application.authentication.framework.AuthenticatorFlowStatus;
 import org.wso2.carbon.identity.application.authentication.framework.LocalApplicationAuthenticator;
+import org.wso2.carbon.identity.application.authentication.framework.config.ConfigurationFacade;
 import org.wso2.carbon.identity.application.authentication.framework.context.AuthenticationContext;
 import org.wso2.carbon.identity.application.authentication.framework.exception.AuthenticationFailedException;
 import org.wso2.carbon.identity.application.authentication.framework.exception.InvalidCredentialsException;
+import org.wso2.carbon.identity.application.authentication.framework.exception.LogoutFailedException;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
@@ -83,6 +86,28 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
     private static final long serialVersionUID = 4345354156955223654L;
     private static final Log log = LogFactory.getLog(MagicLinkAuthenticator.class);
 
+    @Override
+    public AuthenticatorFlowStatus process(HttpServletRequest request,
+                                           HttpServletResponse response, AuthenticationContext context)
+            throws AuthenticationFailedException, LogoutFailedException {
+        if (isIdentifierFirstRequest(request)) {
+            if (context.isLogoutRequest()) {
+                return AuthenticatorFlowStatus.SUCCESS_COMPLETED;
+            } else {
+                processIdfAuthenticationResponse(request, context);
+                if (getName().equals(context.getProperty(FrameworkConstants.LAST_FAILED_AUTHENTICATOR))) {
+                    context.setRetrying(true);
+                }
+                initiateAuthenticationRequest(request, response, context);
+                context.setCurrentAuthenticator(getName());
+                context.setRetrying(false);
+                return AuthenticatorFlowStatus.INCOMPLETE;
+            }
+        }
+        return super.process(request, response, context);
+
+    }
+
     /**
      * This method is used initiate authenticate request.
      *
@@ -95,35 +120,58 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
     protected void initiateAuthenticationRequest(HttpServletRequest request, HttpServletResponse response,
             AuthenticationContext context) throws AuthenticationFailedException {
 
-        User user = getUser(context.getLastAuthenticatedUser());
-        if (user != null) {
-            MagicLinkAuthContextData magicLinkAuthContextData = new MagicLinkAuthContextData();
-            String magicToken = TokenGenerator.generateToken(MagicLinkAuthenticatorConstants.TOKEN_LENGTH);
-            magicLinkAuthContextData.setMagicToken(magicToken);
-            magicLinkAuthContextData.setCreatedTimestamp(System.currentTimeMillis());
-            magicLinkAuthContextData.setUser(user);
-            magicLinkAuthContextData.setSessionDataKey(context.getContextIdentifier());
+        if (context.getLastAuthenticatedUser() == null) {
+            context.setProperty(MagicLinkAuthenticatorConstants.IS_IDF_INITIATED_FROM_MAGIC_LINK_AUTH, true);
+            String loginPage = ConfigurationFacade.getInstance().getAuthenticationEndpointURL();
+            String queryParams = context.getContextIdIncludedQueryParams();
 
-            MagicLinkAuthContextCacheKey cacheKey = new MagicLinkAuthContextCacheKey(magicToken);
-            MagicLinkAuthContextCacheEntry cacheEntry = new MagicLinkAuthContextCacheEntry(magicLinkAuthContextData);
-            MagicLinkAuthContextCache.getInstance().addToCache(cacheKey, cacheEntry);
-
-            if (StringUtils.isNotEmpty(magicToken)) {
-                String expiryTime =
-                        TimeUnit.SECONDS.toMinutes(getExpiryTime()) + " " + TimeUnit.MINUTES.name().toLowerCase();
-                triggerEvent(user.getUsername(), user.getUserStoreDomain(), user.getTenantDomain(), magicToken,
-                        context.getServiceProviderName(), expiryTime);
+            try {
+                String retryParam = "";
+                if (log.isDebugEnabled()) {
+                    log.debug("Identity error message context is null");
+                }
+                response.sendRedirect(loginPage + ("?" + queryParams)
+                        + MagicLinkAuthenticatorConstants.AUTHENTICATORS + MagicLinkAuthenticatorConstants.IDF_HANDLER_NAME + ":" +
+                        MagicLinkAuthenticatorConstants.LOCAL + retryParam);
+            } catch (IOException e) {
+                throw new AuthenticationFailedException(
+                        MagicLinkAuthErrorConstants.ErrorMessages.SYSTEM_ERROR_WHILE_AUTHENTICATING.getCode(),
+                        e.getMessage(),
+                        org.wso2.carbon.identity.application.common.model.User.getUserFromUserName(request.getParameter(
+                                MagicLinkAuthenticatorConstants.USER_NAME)), e);
             }
-        }
-        try {
-            String url = ServiceURLBuilder.create()
-                    .addPath(MagicLinkAuthenticatorConstants.MAGIC_LINK_NOTIFICATION_PAGE).build()
-                    .getAbsolutePublicURL();
-            response.sendRedirect(url);
-        } catch (IOException e) {
-            throw new AuthenticationFailedException("Error while redirecting to the magic link notification page.", e);
-        } catch (URLBuilderException e) {
-            throw new AuthenticationFailedException("Error while building the magic link notification page URL.", e);
+        } else {
+            User user = getUser(context.getLastAuthenticatedUser());
+            if (user != null) {
+                MagicLinkAuthContextData magicLinkAuthContextData = new MagicLinkAuthContextData();
+                String magicToken = TokenGenerator.generateToken(MagicLinkAuthenticatorConstants.TOKEN_LENGTH);
+                magicLinkAuthContextData.setMagicToken(magicToken);
+                magicLinkAuthContextData.setCreatedTimestamp(System.currentTimeMillis());
+                magicLinkAuthContextData.setUser(user);
+                magicLinkAuthContextData.setSessionDataKey(context.getContextIdentifier());
+
+                MagicLinkAuthContextCacheKey cacheKey = new MagicLinkAuthContextCacheKey(magicToken);
+                MagicLinkAuthContextCacheEntry cacheEntry =
+                        new MagicLinkAuthContextCacheEntry(magicLinkAuthContextData);
+                MagicLinkAuthContextCache.getInstance().addToCache(cacheKey, cacheEntry);
+
+                if (StringUtils.isNotEmpty(magicToken)) {
+                    String expiryTime =
+                            TimeUnit.SECONDS.toMinutes(getExpiryTime()) + " " + TimeUnit.MINUTES.name().toLowerCase();
+                    triggerEvent(user.getUsername(), user.getUserStoreDomain(), user.getTenantDomain(), magicToken,
+                            context.getServiceProviderName(), expiryTime);
+                }
+            }
+            try {
+                String url = ServiceURLBuilder.create()
+                        .addPath(MagicLinkAuthenticatorConstants.MAGIC_LINK_NOTIFICATION_PAGE).build()
+                        .getAbsolutePublicURL();
+                response.sendRedirect(url);
+            } catch (IOException e) {
+                throw new AuthenticationFailedException("Error while redirecting to the magic link notification page.", e);
+            } catch (URLBuilderException e) {
+                throw new AuthenticationFailedException("Error while building the magic link notification page URL.", e);
+            }
         }
     }
 
@@ -175,24 +223,13 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
     private void processIdfAuthenticationResponse(HttpServletRequest request, AuthenticationContext context)
             throws AuthenticationFailedException {
 
-        Map<String, String> runtimeParams = getRuntimeParams(context);
         String identifierFromRequest = request.getParameter(MagicLinkAuthenticatorConstants.USER_NAME);
         if (StringUtils.isBlank(identifierFromRequest)) {
             throw new InvalidCredentialsException(MagicLinkAuthErrorConstants.ErrorMessages.EMPTY_USERNAME.getCode(),
                     MagicLinkAuthErrorConstants.ErrorMessages.EMPTY_USERNAME.getMessage());
         }
-        if (MapUtils.isNotEmpty(runtimeParams)) {
-            String skipPreProcessUsername = runtimeParams
-                    .get(MagicLinkAuthenticatorConstants.SKIP_IDENTIFIER_PRE_PROCESS);
-            if (Boolean.parseBoolean(skipPreProcessUsername)) {
-                persistUsername(context, identifierFromRequest);
-
-                // Since the pre-processing is skipped, user id is not populated.
-                AuthenticatedUser user = new AuthenticatedUser();
-                user.setUserName(identifierFromRequest);
-                context.setSubject(user);
-                return;
-            }
+        if (skipPreProcessUsername(context, identifierFromRequest)){
+            return;
         }
 
         String username = identifierFromRequest;
@@ -205,23 +242,12 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         String userId = null;
 
         // Resolve user from multi attribute login.
-        if (MagicLinkServiceDataHolder.getInstance().getMultiAttributeLoginService()
-                .isEnabled(context.getTenantDomain())) {
-            ResolvedUserResult resolvedUserResult = MagicLinkServiceDataHolder.getInstance()
-                    .getMultiAttributeLoginService()
-                    .resolveUser(MultitenantUtils.getTenantAwareUsername(username), context.getTenantDomain());
-            if (resolvedUserResult != null && ResolvedUserResult.UserResolvedStatus.SUCCESS.
-                    equals(resolvedUserResult.getResolvedStatus())) {
-                tenantAwareUsername = resolvedUserResult.getUser().getUsername();
-                username = UserCoreUtil.addTenantDomainToEntry(resolvedUserResult.getUser().getUsername(),
-                        context.getTenantDomain());
-                userId = resolvedUserResult.getUser().getUserID();
-            } else {
-                throw new InvalidCredentialsException(
-                        MagicLinkAuthErrorConstants.ErrorMessages.USER_DOES_NOT_EXISTS.getCode(),
-                        MagicLinkAuthErrorConstants.ErrorMessages.USER_DOES_NOT_EXISTS.getMessage(),
-                        org.wso2.carbon.identity.application.common.model.User.getUserFromUserName(username));
-            }
+        ResolvedUserResult resolvedUserResult = resolveUserFromMultiAttributeLogin(context, username);
+        if (resolvedUserResult != null) {
+            tenantAwareUsername = resolvedUserResult.getUser().getUsername();
+            username = UserCoreUtil.addTenantDomainToEntry(resolvedUserResult.getUser().getUsername(),
+                    context.getTenantDomain());
+            userId = resolvedUserResult.getUser().getUserID();
         }
 
         // Resolve user during B2B flow.
@@ -454,6 +480,44 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         context.addAuthenticatorParams(contextParams);
     }
 
+    private boolean skipPreProcessUsername(AuthenticationContext context, String identifierFromRequest) {
+        Map<String, String> runtimeParams = getRuntimeParams(context);
+        if (MapUtils.isNotEmpty(runtimeParams)) {
+            String skipPreProcessUsername = runtimeParams
+                    .get(MagicLinkAuthenticatorConstants.SKIP_IDENTIFIER_PRE_PROCESS);
+            if (Boolean.parseBoolean(skipPreProcessUsername)) {
+                persistUsername(context, identifierFromRequest);
+
+                // Since the pre-processing is skipped, user id is not populated.
+                AuthenticatedUser user = new AuthenticatedUser();
+                user.setUserName(identifierFromRequest);
+                context.setSubject(user);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private ResolvedUserResult resolveUserFromMultiAttributeLogin(AuthenticationContext context, String username)
+            throws InvalidCredentialsException{
+        if (MagicLinkServiceDataHolder.getInstance().getMultiAttributeLoginService()
+                .isEnabled(context.getTenantDomain())) {
+            ResolvedUserResult resolvedUserResult = MagicLinkServiceDataHolder.getInstance()
+                    .getMultiAttributeLoginService()
+                    .resolveUser(MultitenantUtils.getTenantAwareUsername(username), context.getTenantDomain());
+            if (resolvedUserResult != null && ResolvedUserResult.UserResolvedStatus.SUCCESS.
+                    equals(resolvedUserResult.getResolvedStatus())) {
+                return resolvedUserResult;
+            } else {
+                throw new InvalidCredentialsException(
+                        MagicLinkAuthErrorConstants.ErrorMessages.USER_DOES_NOT_EXISTS.getCode(),
+                        MagicLinkAuthErrorConstants.ErrorMessages.USER_DOES_NOT_EXISTS.getMessage(),
+                        org.wso2.carbon.identity.application.common.model.User.getUserFromUserName(username));
+            }
+        }
+        return null;
+    }
+
     private User resolveUserFromOrganizationHierarchy(AuthenticationContext context,
                                                       String tenantAwareUsername, String username)
             throws AuthenticationFailedException {
@@ -498,11 +562,11 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                         LoggerUtils.triggerDiagnosticLogEvent(
                                 MagicLinkAuthenticatorConstants.LogConstants.MAGICLINK_LOCAL_SERVICE, null,
                                 MagicLinkAuthenticatorConstants.LogConstants.FAILED,
-                                "IdentifierHandler failed while trying to authenticate",
+                                "Magic Link Authenticator failed while trying to authenticate",
                                 "authenticate-user", null);
                     }
                     if (log.isDebugEnabled()) {
-                        log.debug("IdentifierHandler failed while trying to authenticate", e);
+                        log.debug("Magic Link Authenticator failed while trying to authenticate", e);
                     }
                     throw new AuthenticationFailedException(
                             MagicLinkAuthErrorConstants.ErrorMessages
@@ -582,5 +646,18 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
 
         return userId;
     }
+
+    /**
+     * Check if request type is identifier first.
+     *
+     * @param request HttpServletRequest.
+     * @return boolean.
+     */
+    private boolean isIdentifierFirstRequest(HttpServletRequest request) {
+
+        String authType = request.getParameter(AUTH_TYPE);
+        return IDF.equals(authType) || request.getParameter(IDENTIFIER_CONSENT) != null;
+    }
+
 
 }

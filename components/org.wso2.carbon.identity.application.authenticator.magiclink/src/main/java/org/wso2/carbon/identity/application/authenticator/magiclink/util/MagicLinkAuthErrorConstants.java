@@ -12,6 +12,9 @@ public class MagicLinkAuthErrorConstants {
         // Identifier related Error codes.
         EMPTY_USERNAME("BAS-60002", "Username is empty."),
 
+        // IO related Error codes
+        SYSTEM_ERROR_WHILE_AUTHENTICATING("BAS-65001", "System error while authenticating"),
+
         // Tenant related Error codes.
         INVALID_TENANT_ID_OF_THE_USER("BAS-65011",
                 "Failed while trying to get the tenant ID of the user %s"),
