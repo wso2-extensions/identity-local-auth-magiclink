@@ -669,6 +669,15 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                     org.wso2.carbon.identity.application.common.model.User.getUserFromUserName(username), e);
         }
 
+        raiseUserNotExistError(username, userId);
+        //TODO: user tenant domain has to be an attribute in the AuthenticationContext
+        authProperties.put("user-tenant-domain", tenantDomain);
+        persistUser(username, authProperties, context, userId, tenantAwareUsername, tenantDomain);
+        return Optional.of(userId);
+    }
+
+    private void raiseUserNotExistError(String username, String userId)
+            throws AuthenticationFailedException {
         if (userId == null) {
             if (log.isDebugEnabled()) {
                 log.debug("User does not exists");
@@ -686,10 +695,6 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                     MagicLinkAuthErrorConstants.ErrorMessages.USER_DOES_NOT_EXISTS.getMessage(),
                     org.wso2.carbon.identity.application.common.model.User.getUserFromUserName(username));
         }
-        //TODO: user tenant domain has to be an attribute in the AuthenticationContext
-        authProperties.put("user-tenant-domain", tenantDomain);
-        persistUser(username, authProperties, context, userId, tenantAwareUsername, tenantDomain);
-        return Optional.of(userId);
     }
 
     /**
