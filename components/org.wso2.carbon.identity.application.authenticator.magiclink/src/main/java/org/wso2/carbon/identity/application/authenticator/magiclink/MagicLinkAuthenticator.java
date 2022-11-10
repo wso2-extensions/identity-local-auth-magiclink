@@ -22,7 +22,6 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.netbeans.lib.cvsclient.request.StickyRequest;
 import org.wso2.carbon.identity.application.authentication.framework.AbstractApplicationAuthenticator;
 import org.wso2.carbon.identity.application.authentication.framework.AuthenticatorFlowStatus;
 import org.wso2.carbon.identity.application.authentication.framework.LocalApplicationAuthenticator;
@@ -59,8 +58,6 @@ import org.wso2.carbon.user.core.util.UserCoreUtil;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -69,11 +66,14 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.EMAIL_ADDRESS_CLAIM;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.RequestParams.AUTH_TYPE;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.RequestParams.IDENTIFIER_CONSENT;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.RequestParams.IDF;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.USERNAME_CLAIM;
-import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.EMAIL_ADDRESS_CLAIM;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.BLOCKED_USERSTORE_DOMAINS_LIST;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.BLOCKED_USERSTORE_DOMAINS_SEPARATOR;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.DEFAULT_EXPIRY_TIME;
@@ -132,7 +132,8 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                     log.debug("Identity error message context is null");
                 }
                 response.sendRedirect(loginPage + ("?" + queryParams)
-                        + MagicLinkAuthenticatorConstants.AUTHENTICATORS + MagicLinkAuthenticatorConstants.IDF_HANDLER_NAME + ":" +
+                        + MagicLinkAuthenticatorConstants.AUTHENTICATORS +
+                        MagicLinkAuthenticatorConstants.IDF_HANDLER_NAME + ":" +
                         MagicLinkAuthenticatorConstants.LOCAL + retryParam);
             } catch (IOException e) {
                 throw new AuthenticationFailedException(
@@ -169,9 +170,11 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                         .getAbsolutePublicURL();
                 response.sendRedirect(url);
             } catch (IOException e) {
-                throw new AuthenticationFailedException("Error while redirecting to the magic link notification page.", e);
+                throw new AuthenticationFailedException(
+                        "Error while redirecting to the magic link notification page.", e);
             } catch (URLBuilderException e) {
-                throw new AuthenticationFailedException("Error while building the magic link notification page URL.", e);
+                throw new AuthenticationFailedException(
+                        "Error while building the magic link notification page URL.", e);
             }
         }
     }
@@ -293,7 +296,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
     }
 
     /**
-     * Get the friendly name of the Authenticator
+     * Get the friendly name of the Authenticator.
      */
     @Override
     public String getFriendlyName() {
@@ -326,7 +329,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
     }
 
     /**
-     * Get the name of the Authenticator
+     * Get the name of the Authenticator.
      */
     @Override
     public String getName() {
@@ -349,7 +352,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             String applicationName, String expiryTime) throws AuthenticationFailedException {
 
         String eventName = "TRIGGER_NOTIFICATION";
-        HashMap<String, Object> properties = new HashMap();
+        HashMap<String, Object> properties = new HashMap<>();
         properties.put("user-name", username);
         properties.put("userstore-domain", userStoreDomain);
         properties.put("tenant-domain", tenantDomain);
@@ -377,9 +380,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             long createdTimestamp = cacheEntry.getMagicLinkAuthContextData().getCreatedTimestamp();
             long tokenValidityPeriod = TimeUnit.SECONDS.toMillis(getExpiryTime());
             // Validate whether the token is expired.
-            if (currentTimestamp - createdTimestamp < tokenValidityPeriod) {
-                return true;
-            }
+            return currentTimestamp - createdTimestamp < tokenValidityPeriod;
         }
         return false;
     }
@@ -528,8 +529,8 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         context.setSubject(user);
     }
 
-    private Optional<ResolvedUserResult> resolveUserFromMultiAttributeLogin(AuthenticationContext context, String username)
-            throws InvalidCredentialsException {
+    private Optional<ResolvedUserResult> resolveUserFromMultiAttributeLogin(
+            AuthenticationContext context, String username) throws InvalidCredentialsException {
 
         if (MagicLinkServiceDataHolder.getInstance().getMultiAttributeLoginService()
                 .isEnabled(context.getTenantDomain())) {
@@ -553,7 +554,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                                                       String tenantAwareUsername, String username)
             throws AuthenticationFailedException {
 
-        if(!preconditionsForResolvingUserFromOrganizationHierarchy(context)) {
+        if (!preconditionsForResolvingUserFromOrganizationHierarchy(context)) {
             return Optional.empty();
         }
         String requestTenantDomain = context.getUserTenantDomain();
