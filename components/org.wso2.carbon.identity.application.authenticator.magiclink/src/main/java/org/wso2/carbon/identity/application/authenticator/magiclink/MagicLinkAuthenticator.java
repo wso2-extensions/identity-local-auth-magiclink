@@ -505,6 +505,13 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         context.setSubject(user);
     }
 
+    private void setSubjectInContextWithoutUserId(AuthenticationContext context, String identifierFromRequest) {
+
+        AuthenticatedUser user = new AuthenticatedUser();
+        user.setUserName(identifierFromRequest);
+        context.setSubject(user);
+    }
+
     private boolean skipPreProcessUsername(AuthenticationContext context, String identifierFromRequest) {
 
         Map<String, String> runtimeParams = getRuntimeParams(context);
@@ -520,13 +527,6 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             }
         }
         return false;
-    }
-
-    private void setSubjectInContextWithoutUserId(AuthenticationContext context, String identifierFromRequest) {
-
-        AuthenticatedUser user = new AuthenticatedUser();
-        user.setUserName(identifierFromRequest);
-        context.setSubject(user);
     }
 
     private Optional<ResolvedUserResult> resolveUserFromMultiAttributeLogin(
