@@ -73,6 +73,7 @@ import static org.wso2.carbon.identity.application.authentication.framework.util
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.RequestParams.AUTH_TYPE;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.RequestParams.IDENTIFIER_CONSENT;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.RequestParams.IDF;
+import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.RequestParams.RESTART_FLOW;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.USERNAME_CLAIM;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.BLOCKED_USERSTORE_DOMAINS_LIST;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.BLOCKED_USERSTORE_DOMAINS_SEPARATOR;
@@ -235,6 +236,13 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
     @Override
     public boolean canHandle(HttpServletRequest httpServletRequest) {
 
+        if (isIdentifierFirstRequest(httpServletRequest)) {
+            String userName = httpServletRequest.getParameter(MagicLinkAuthenticatorConstants.USER_NAME);
+            String identifierConsent = httpServletRequest.getParameter(IDENTIFIER_CONSENT);
+            String restart = httpServletRequest.getParameter(RESTART_FLOW);
+
+            return userName != null || identifierConsent != null || restart != null;
+        }
         return StringUtils.isNotEmpty(
                 httpServletRequest.getParameter(MagicLinkAuthenticatorConstants.MAGIC_LINK_TOKEN));
     }
