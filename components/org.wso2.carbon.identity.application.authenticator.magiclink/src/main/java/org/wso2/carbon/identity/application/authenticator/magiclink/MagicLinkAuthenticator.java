@@ -272,14 +272,11 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             context.setProperties(authProperties);
         }
 
-        if (getAuthenticatorConfig().getParameterMap() != null) {
-            String validateUsername = getAuthenticatorConfig().getParameterMap()
-                    .get(MagicLinkAuthenticatorConstants.VALIDATE_USERNAME);
-            if (Boolean.parseBoolean(validateUsername)) {
-                userId = resolveUserFromStoreManager(tenantDomain, tenantAwareUsername, userId, username);
-                //TODO: user tenant domain has to be an attribute in the AuthenticationContext
-                authProperties.put("user-tenant-domain", tenantDomain);
-            }
+        // Resolve user from user store
+        Optional<String> userIdFromUserStore = resolveUserFromUserStore(tenantDomain, tenantAwareUsername,
+                userId, username, authProperties);
+        if (userIdFromUserStore.isPresent()) {
+            userId = userIdFromUserStore.get();
         }
 
         username = FrameworkUtils.prependUserStoreDomainToName(username);
@@ -605,12 +602,20 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                 MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equalsIgnoreCase(requestTenantDomain);
     }
 
-    private String resolveUserFromStoreManager(String tenantDomain, String tenantAwareUsername,
-                                     String userId, String username)
+    private Optional<String> resolveUserFromUserStore(String tenantDomain, String tenantAwareUsername,
+                                     String userId, String username, Map<String, Object> authProperties)
             throws AuthenticationFailedException {
 
+        if (getAuthenticatorConfig().getParameterMap() == null) {
+            return Optional.empty();
+        }
+        String validateUsername = getAuthenticatorConfig().getParameterMap()
+                .get(MagicLinkAuthenticatorConstants.VALIDATE_USERNAME);
+        if (!Boolean.parseBoolean(validateUsername)) {
+            return Optional.empty();
+        }
         AbstractUserStoreManager userStoreManager;
-        // Check for the username exists.
+        // Check if the username exists.
         try {
             int tenantId = MagicLinkServiceDataHolder.getInstance()
                     .getRealmService().getTenantManager().getTenantId(tenantDomain);
@@ -621,7 +626,8 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                 userStoreManager = (AbstractUserStoreManager) userRealm.getUserStoreManager();
 
                 // If the user id is already resolved from the multi attribute login, we can assume the user
-                // exists. If not, we will try to resolve the user id, which will indicate if the user exists or not.
+                // exists. If not, we will try to resolve the user id, which will indicate if the user exists
+                // or not.
                 if (userId == null) {
                     userId = userStoreManager.getUserIDFromUserName(tenantAwareUsername);
                 }
@@ -669,8 +675,9 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                     MagicLinkAuthErrorConstants.ErrorMessages.USER_DOES_NOT_EXISTS.getMessage(),
                     org.wso2.carbon.identity.application.common.model.User.getUserFromUserName(username));
         }
-
-        return userId;
+        //TODO: user tenant domain has to be an attribute in the AuthenticationContext
+        authProperties.put("user-tenant-domain", tenantDomain);
+        return Optional.of(userId);
     }
 
     /**
