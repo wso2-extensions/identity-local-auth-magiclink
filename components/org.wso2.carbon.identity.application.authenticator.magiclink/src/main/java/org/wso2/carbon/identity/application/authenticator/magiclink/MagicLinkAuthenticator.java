@@ -644,13 +644,16 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             UserRealm userRealm = MagicLinkServiceDataHolder.getInstance().getRealmService()
                     .getTenantUserRealm(tenantId);
 
-            // If the user id is already resolved from the multi attribute login, we can assume the user
-            // exists. If not, we will try to resolve the user id, which will indicate if the user exists
-            // or not.
-            if (userRealm != null && userId == null) {
+            if (userRealm != null) {
                 userStoreManager = (AbstractUserStoreManager) userRealm.getUserStoreManager();
-                userId = userStoreManager.getUserIDFromUserName(tenantAwareUsername);
 
+                // If the user id is already resolved from the multi attribute login, we can assume the user
+                // exists. If not, we will try to resolve the user id, which will indicate if the user exists
+                // or not.
+                if (userId == null) {
+                    userId = userStoreManager.getUserIDFromUserName(tenantAwareUsername);
+                    persistUser(username, authProperties, context, userId, tenantAwareUsername, tenantDomain);
+                }
             } else {
                 throw new AuthenticationFailedException(
                         MagicLinkAuthErrorConstants.ErrorMessages
@@ -681,7 +684,6 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         handleUserNotExistError(username, userId);
         //TODO: user tenant domain has to be an attribute in the AuthenticationContext
         authProperties.put("user-tenant-domain", tenantDomain);
-        persistUser(username, authProperties, context, userId, tenantAwareUsername, tenantDomain);
         return Optional.of(userId);
     }
 
