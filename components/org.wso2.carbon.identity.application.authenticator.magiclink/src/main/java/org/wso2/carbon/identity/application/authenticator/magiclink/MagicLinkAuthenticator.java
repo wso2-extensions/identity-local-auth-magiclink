@@ -217,17 +217,6 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         }
     }
 
-    private boolean doSomething(HttpServletRequest request, AuthenticationContext context)
-            throws AuthenticationFailedException {
-
-        String identifierFromRequest = getIdentifierFromRequest(request);
-        if (StringUtils.isBlank(identifierFromRequest)) {
-            throw new InvalidCredentialsException(MagicLinkAuthErrorConstants.ErrorMessages.EMPTY_USERNAME.getCode(),
-                    MagicLinkAuthErrorConstants.ErrorMessages.EMPTY_USERNAME.getMessage());
-        }
-        return skipPreProcessUsername(context, identifierFromRequest);
-    }
-
     @Override
     protected boolean retryAuthenticationEnabled() {
 
@@ -412,6 +401,19 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         return request.getParameter(MagicLinkAuthenticatorConstants.USER_NAME);
     }
 
+    private void resolveUserFromIdfAuthenticationResponse(HttpServletRequest request, AuthenticationContext context)
+            throws AuthenticationFailedException {
+
+        String identifierFromRequest = getIdentifierFromRequest(request);
+        if (StringUtils.isBlank(identifierFromRequest)) {
+            throw new InvalidCredentialsException(MagicLinkAuthErrorConstants.ErrorMessages.EMPTY_USERNAME.getCode(),
+                    MagicLinkAuthErrorConstants.ErrorMessages.EMPTY_USERNAME.getMessage());
+        }
+        if (!skipPreProcessUsername(context, identifierFromRequest)) {
+            processIdfAuthenticationResponse(request, context);
+        }
+    }
+
     /**
      * This method is used to process the authentication response from identifier handler.
      *
@@ -419,44 +421,42 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
      * @param context  The authentication context.
      * @throws AuthenticationFailedException In occasions of failing to validate magicToken.
      */
-    private void resolveUserFromIdfAuthenticationResponse(HttpServletRequest request, AuthenticationContext context)
+    private void processIdfAuthenticationResponse(HttpServletRequest request, AuthenticationContext context)
             throws AuthenticationFailedException {
 
-        if (!doSomething(request, context)) {
-            String username = getIdentifierFromRequest(request);
+        String username = getIdentifierFromRequest(request);
 
-            Optional<String> validatedEmailUsername = validateEmailUsername(username, context);
-            if (validatedEmailUsername.isPresent()) {
-                username = validatedEmailUsername.get();
-            }
+        Optional<String> validatedEmailUsername = validateEmailUsername(username, context);
+        if (validatedEmailUsername.isPresent()) {
+            username = validatedEmailUsername.get();
+        }
 
-            String tenantAwareUsername = MultitenantUtils.getTenantAwareUsername(username);
-            String userId = null;
-            String tenantDomain = MultitenantUtils.getTenantDomain(username);
-            Map<String, Object> authProperties = context.getProperties();
-            if (MapUtils.isEmpty(authProperties)) {
-                authProperties = new HashMap<>();
-                context.setProperties(authProperties);
-            }
+        String tenantAwareUsername = MultitenantUtils.getTenantAwareUsername(username);
+        String userId = null;
+        String tenantDomain = MultitenantUtils.getTenantDomain(username);
+        Map<String, Object> authProperties = context.getProperties();
+        if (MapUtils.isEmpty(authProperties)) {
+            authProperties = new HashMap<>();
+            context.setProperties(authProperties);
+        }
 
-            Optional<String> userIdFromMultiAttributeLogin = resolveUserFromMultiAttributeLogin(context,
-                    username, tenantDomain, authProperties);
-            if (userIdFromMultiAttributeLogin.isPresent()) {
-                userId = userIdFromMultiAttributeLogin.get();
-            }
-            Optional<String> userIdFromOrganizationHierarchy = resolveUserFromOrganizationHierarchy(context,
-                    tenantAwareUsername, username, authProperties);
-            if (userIdFromOrganizationHierarchy.isPresent()) {
-                userId = userIdFromOrganizationHierarchy.get();
-            }
-            Optional<String> userIdFromUserStore = resolveUserFromUserStore(tenantDomain, tenantAwareUsername,
-                    userId, username, authProperties, context);
-            if (userIdFromUserStore.isPresent()) {
-                userId = userIdFromUserStore.get();
-            }
-            if (userId == null) {
-                persistUser(username, authProperties, context, null, tenantAwareUsername, tenantDomain);
-            }
+        Optional<String> userIdFromMultiAttributeLogin = resolveUserFromMultiAttributeLogin(context,
+                username, tenantDomain, authProperties);
+        if (userIdFromMultiAttributeLogin.isPresent()) {
+            userId = userIdFromMultiAttributeLogin.get();
+        }
+        Optional<String> userIdFromOrganizationHierarchy = resolveUserFromOrganizationHierarchy(context,
+                tenantAwareUsername, username, authProperties);
+        if (userIdFromOrganizationHierarchy.isPresent()) {
+            userId = userIdFromOrganizationHierarchy.get();
+        }
+        Optional<String> userIdFromUserStore = resolveUserFromUserStore(tenantDomain, tenantAwareUsername,
+                userId, username, authProperties, context);
+        if (userIdFromUserStore.isPresent()) {
+            userId = userIdFromUserStore.get();
+        }
+        if (userId == null) {
+            persistUser(username, authProperties, context, null, tenantAwareUsername, tenantDomain);
         }
     }
 
@@ -584,7 +584,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         } catch (OrganizationManagementException e) {
 
             if (log.isDebugEnabled()) {
-                log.debug("IdentifierHandler failed while trying to resolving user's resident org", e);
+                log.debug("Magic Link Authenticator failed while trying to resolving user's resident org", e);
             }
             throw new AuthenticationFailedException(
                     MagicLinkAuthErrorConstants.ErrorMessages
@@ -652,7 +652,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             }
         } catch (IdentityRuntimeException e) {
             if (log.isDebugEnabled()) {
-                log.debug("IdentifierHandler failed while trying to get the tenant ID of the user " +
+                log.debug("Magic Link Authenticator failed while trying to get the tenant ID of the user " +
                         username, e);
             }
             throw new AuthenticationFailedException(
@@ -661,7 +661,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                     org.wso2.carbon.identity.application.common.model.User.getUserFromUserName(username), e);
         } catch (org.wso2.carbon.user.api.UserStoreException e) {
             if (log.isDebugEnabled()) {
-                log.debug("IdentifierHandler failed while trying to authenticate", e);
+                log.debug("Magic Link Authenticator failed while trying to authenticate", e);
             }
             throw new AuthenticationFailedException(
                     MagicLinkAuthErrorConstants.ErrorMessages.USER_STORE_EXCEPTION_WHILE_TRYING_TO_AUTHENTICATE
