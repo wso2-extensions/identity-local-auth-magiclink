@@ -401,6 +401,13 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         return request.getParameter(MagicLinkAuthenticatorConstants.USER_NAME);
     }
 
+    /**
+     * This method is used to resolve the user from authentication response from identifier handler.
+     *
+     * @param request  The httpServletRequest.
+     * @param context  The authentication context.
+     * @throws AuthenticationFailedException In occasions of failing.
+     */
     private void resolveUserFromIdfAuthenticationResponse(HttpServletRequest request, AuthenticationContext context)
             throws AuthenticationFailedException {
 
@@ -414,13 +421,6 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         }
     }
 
-    /**
-     * This method is used to process the authentication response from identifier handler.
-     *
-     * @param request  The httpServletRequest.
-     * @param context  The authentication context.
-     * @throws AuthenticationFailedException In occasions of failing to validate magicToken.
-     */
     private void processIdfAuthenticationResponse(HttpServletRequest request, AuthenticationContext context)
             throws AuthenticationFailedException {
 
@@ -441,7 +441,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         }
 
         Optional<String> userIdFromMultiAttributeLogin = resolveUserFromMultiAttributeLogin(context,
-                username, tenantDomain, authProperties);
+                username, authProperties);
         if (userIdFromMultiAttributeLogin.isPresent()) {
             userId = userIdFromMultiAttributeLogin.get();
         }
@@ -501,9 +501,9 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
 
     private void persistUser(String username, Map<String, Object> authProperties, AuthenticationContext context,
                          String userId, String tenantAwareUsername, String tenantDomain) {
+
         username = FrameworkUtils.prependUserStoreDomainToName(username);
         authProperties.put("username", username);
-
         persistUsername(context, username);
         setSubjectInContextWithUserId(context, userId, tenantAwareUsername, username, tenantDomain);
     }
@@ -526,7 +526,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
     }
 
     private Optional<String> resolveUserFromMultiAttributeLogin(AuthenticationContext context, String username,
-                                                                String tenantDomain, Map<String, Object> authProperties)
+                                                               Map<String, Object> authProperties)
             throws InvalidCredentialsException {
 
         if (MagicLinkServiceDataHolder.getInstance().getMultiAttributeLoginService()
@@ -537,6 +537,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             if (resolvedUserResult != null && ResolvedUserResult.UserResolvedStatus.SUCCESS.
                     equals(resolvedUserResult.getResolvedStatus())) {
                 String tenantAwareUsername = resolvedUserResult.getUser().getUsername();
+                String tenantDomain = resolvedUserResult.getUser().getTenantDomain();
                 username = UserCoreUtil.addTenantDomainToEntry(resolvedUserResult.getUser().getUsername(),
                         context.getTenantDomain());
                 String userId = resolvedUserResult.getUser().getUserID();
@@ -669,14 +670,14 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                     org.wso2.carbon.identity.application.common.model.User.getUserFromUserName(username), e);
         }
 
-        raiseUserNotExistError(username, userId);
+        handleUserNotExistError(username, userId);
         //TODO: user tenant domain has to be an attribute in the AuthenticationContext
         authProperties.put("user-tenant-domain", tenantDomain);
         persistUser(username, authProperties, context, userId, tenantAwareUsername, tenantDomain);
         return Optional.of(userId);
     }
 
-    private void raiseUserNotExistError(String username, String userId)
+    private void handleUserNotExistError(String username, String userId)
             throws AuthenticationFailedException {
         if (userId == null) {
             if (log.isDebugEnabled()) {
