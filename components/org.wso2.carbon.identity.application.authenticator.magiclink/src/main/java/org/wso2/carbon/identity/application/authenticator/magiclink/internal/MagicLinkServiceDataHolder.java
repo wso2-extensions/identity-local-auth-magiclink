@@ -65,22 +65,44 @@ public class MagicLinkServiceDataHolder {
         this.realmService = realmService;
     }
 
+    /**
+     * Get MultiAttribute Login Service.
+     *
+     * @return MultiAttribute Login Service.
+     */
     public MultiAttributeLoginService getMultiAttributeLoginService() {
 
         return multiAttributeLoginService;
     }
 
+    /**
+     * Set MultiAttribute Login Service.
+     *
+     * @param multiAttributeLoginService MultiAttribute Login Service.
+     */
     public void setMultiAttributeLoginService(MultiAttributeLoginService multiAttributeLoginService) {
+
         this.multiAttributeLoginService = multiAttributeLoginService;
     }
 
+    /**
+     * Get Organization User Resident Resolver Service.
+     *
+     * @return Organization User Resident Resolver Service.
+     */
     public OrganizationUserResidentResolverService getOrganizationUserResidentResolverService() {
 
         return organizationUserResidentResolverService;
     }
 
+    /**
+     * Set Organization User Resident Resolver Service.
+     *
+     * @param organizationUserResidentResolverService Organization User Resident Resolver Service.
+     */
     public void setOrganizationUserResidentResolverService
             (OrganizationUserResidentResolverService organizationUserResidentResolverService) {
+
         this.organizationUserResidentResolverService = organizationUserResidentResolverService;
     }
 

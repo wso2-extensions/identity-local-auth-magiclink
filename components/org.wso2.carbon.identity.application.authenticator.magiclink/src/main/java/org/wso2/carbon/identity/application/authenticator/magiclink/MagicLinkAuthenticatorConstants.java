@@ -46,16 +46,5 @@ public abstract class MagicLinkAuthenticatorConstants {
     public static final String SKIP_IDENTIFIER_PRE_PROCESS = "skipIdentifierPreProcess";
     public static final String RE_CAPTCHA_USER_DOMAIN = "user-domain-recaptcha";
     public static final String VALIDATE_USERNAME = "ValidateUsername";
-
-    /**
-     * Define logging constants.
-     */
-    public static class LogConstants {
-
-        public static final String MAGICLINK_LOCAL_SERVICE = "magiclink-local-service";
-        public static final String FAILED = "FAILED";
-    }
-
-
 }
 

@@ -92,22 +92,21 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
     public AuthenticatorFlowStatus process(HttpServletRequest request,
                                            HttpServletResponse response, AuthenticationContext context)
             throws AuthenticationFailedException, LogoutFailedException {
+
         if (isIdentifierFirstRequest(request)) {
             if (context.isLogoutRequest()) {
                 return AuthenticatorFlowStatus.SUCCESS_COMPLETED;
-            } else {
-                resolveUserFromIdfAuthenticationResponse(request, context);
-                if (getName().equals(context.getProperty(FrameworkConstants.LAST_FAILED_AUTHENTICATOR))) {
-                    context.setRetrying(true);
-                }
-                initiateAuthenticationRequest(request, response, context);
-                context.setCurrentAuthenticator(getName());
-                context.setRetrying(false);
-                return AuthenticatorFlowStatus.INCOMPLETE;
             }
+            resolveUserFromIdfAuthenticationResponse(request, context);
+            if (getName().equals(context.getProperty(FrameworkConstants.LAST_FAILED_AUTHENTICATOR))) {
+                context.setRetrying(true);
+            }
+            initiateAuthenticationRequest(request, response, context);
+            context.setCurrentAuthenticator(getName());
+            context.setRetrying(false);
+            return AuthenticatorFlowStatus.INCOMPLETE;
         }
         return super.process(request, response, context);
-
     }
 
     /**
@@ -463,7 +462,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         if (userIdFromUserStore.isPresent()) {
             userId = userIdFromUserStore.get();
         }
-        if (userId == null) {
+        if (StringUtils.isBlank(userId)) {
             persistUser(username, authProperties, context, null, tenantAwareUsername, tenantDomain);
         }
     }
@@ -566,7 +565,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                                                                   Map<String, Object> authProperties)
             throws AuthenticationFailedException {
 
-        if (!preconditionsForResolvingUserFromOrganizationHierarchy(context)) {
+        if (!canResolveUserFromOrganizationHierarchy(context)) {
             return Optional.empty();
         }
         String requestTenantDomain = context.getUserTenantDomain();
@@ -613,7 +612,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         return Optional.empty();
     }
 
-    private boolean preconditionsForResolvingUserFromOrganizationHierarchy(AuthenticationContext context) {
+    private boolean canResolveUserFromOrganizationHierarchy(AuthenticationContext context) {
 
         if (context.getCallerPath() != null && context.getCallerPath().startsWith("/t/")) {
             return false;
@@ -650,7 +649,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                 // If the user id is already resolved from the multi attribute login, we can assume the user
                 // exists. If not, we will try to resolve the user id, which will indicate if the user exists
                 // or not.
-                if (userId == null) {
+                if (StringUtils.isBlank(userId)) {
                     userId = userStoreManager.getUserIDFromUserName(tenantAwareUsername);
                     persistUser(username, authProperties, context, userId, tenantAwareUsername, tenantDomain);
                 }
@@ -689,7 +688,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
 
     private void handleUserNotExistError(String username, String userId)
             throws AuthenticationFailedException {
-        if (userId == null) {
+        if (StringUtils.isBlank(userId)) {
             if (log.isDebugEnabled()) {
                 log.debug("User does not exists");
             }
