@@ -71,7 +71,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.EMAIL_ADDRESS_CLAIM;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.RequestParams.AUTH_TYPE;
-import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.RequestParams.IDENTIFIER_CONSENT;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.RequestParams.IDF;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.RequestParams.RESTART_FLOW;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.USERNAME_CLAIM;
@@ -97,9 +96,11 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             if (context.isLogoutRequest()) {
                 return AuthenticatorFlowStatus.SUCCESS_COMPLETED;
             }
-            resolveUserFromIdfAuthenticationResponse(request, context);
             if (getName().equals(context.getProperty(FrameworkConstants.LAST_FAILED_AUTHENTICATOR))) {
                 context.setRetrying(true);
+            }
+            if (shouldResolveUserFromIdfAuthenticationResponse(request, context)) {
+                findUserFromIdfAuthenticationResponse(request, context);
             }
             initiateAuthenticationRequest(request, response, context);
             context.setCurrentAuthenticator(getName());
@@ -239,10 +240,9 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
 
         if (isIdentifierFirstRequest(httpServletRequest)) {
             String userName = httpServletRequest.getParameter(MagicLinkAuthenticatorConstants.USER_NAME);
-            String identifierConsent = httpServletRequest.getParameter(IDENTIFIER_CONSENT);
             String restart = httpServletRequest.getParameter(RESTART_FLOW);
 
-            return userName != null || identifierConsent != null || restart != null;
+            return userName != null || restart != null;
         }
         return StringUtils.isNotEmpty(
                 httpServletRequest.getParameter(MagicLinkAuthenticatorConstants.MAGIC_LINK_TOKEN));
@@ -410,14 +410,8 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         return request.getParameter(MagicLinkAuthenticatorConstants.USER_NAME);
     }
 
-    /**
-     * This method is used to resolve the user from authentication response from identifier handler.
-     *
-     * @param request  The httpServletRequest.
-     * @param context  The authentication context.
-     * @throws AuthenticationFailedException In occasions of failing.
-     */
-    private void resolveUserFromIdfAuthenticationResponse(HttpServletRequest request, AuthenticationContext context)
+    private boolean shouldResolveUserFromIdfAuthenticationResponse(HttpServletRequest request,
+                                                                   AuthenticationContext context)
             throws AuthenticationFailedException {
 
         String identifierFromRequest = getIdentifierFromRequest(request);
@@ -425,12 +419,17 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             throw new InvalidCredentialsException(MagicLinkAuthErrorConstants.ErrorMessages.EMPTY_USERNAME.getCode(),
                     MagicLinkAuthErrorConstants.ErrorMessages.EMPTY_USERNAME.getMessage());
         }
-        if (!skipPreProcessUsername(context, identifierFromRequest)) {
-            processIdfAuthenticationResponse(request, context);
-        }
+        return !skipPreProcessUsername(context, identifierFromRequest);
     }
 
-    private void processIdfAuthenticationResponse(HttpServletRequest request, AuthenticationContext context)
+    /**
+     * This method is used to resolve the user from authentication response from identifier handler.
+     *
+     * @param request  The httpServletRequest.
+     * @param context  The authentication context.
+     * @throws AuthenticationFailedException In occasions of failing.
+     */
+    private void findUserFromIdfAuthenticationResponse(HttpServletRequest request, AuthenticationContext context)
             throws AuthenticationFailedException {
 
         String username = getIdentifierFromRequest(request);
@@ -512,7 +511,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                          String userId, String tenantAwareUsername, String tenantDomain) {
 
         username = FrameworkUtils.prependUserStoreDomainToName(username);
-        authProperties.put("username", username);
+        authProperties.put(MagicLinkAuthenticatorConstants.USER_NAME, username);
         persistUsername(context, username);
         setSubjectInContextWithUserId(context, userId, tenantAwareUsername, username, tenantDomain);
     }
@@ -718,7 +717,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
     private boolean isIdentifierFirstRequest(HttpServletRequest request) {
 
         String authType = request.getParameter(AUTH_TYPE);
-        return IDF.equals(authType) || request.getParameter(IDENTIFIER_CONSENT) != null;
+        return IDF.equals(authType);
     }
 
 
