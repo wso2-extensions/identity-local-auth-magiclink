@@ -112,7 +112,6 @@ public class UserResolver {
 
         AbstractUserStoreManager userStoreManager;
 
-        // Check if the username exists.
         try {
             int tenantId = MagicLinkServiceDataHolder.getInstance()
                     .getRealmService().getTenantManager().getTenantId(tenantDomain);
