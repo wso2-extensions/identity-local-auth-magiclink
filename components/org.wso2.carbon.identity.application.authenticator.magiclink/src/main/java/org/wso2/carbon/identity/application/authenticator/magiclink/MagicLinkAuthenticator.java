@@ -94,8 +94,10 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             if (getName().equals(context.getProperty(FrameworkConstants.LAST_FAILED_AUTHENTICATOR))) {
                 context.setRetrying(true);
             }
-            if (shouldResolveUserFromIdfAuthenticationResponse(request, context)) {
-                findUserFromIdfAuthenticationResponse(request, context);
+            if (canResolveUserFromIdfAuthenticationResponse(request, context)) {
+                setResolvedUserInContext(request, context);
+            } else {
+                setUnresolvedUserInContext(request, context);
             }
             initiateAuthenticationRequest(request, response, context);
             context.setCurrentAuthenticator(getName());
@@ -405,8 +407,8 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         return request.getParameter(MagicLinkAuthenticatorConstants.USER_NAME);
     }
 
-    private boolean shouldResolveUserFromIdfAuthenticationResponse(HttpServletRequest request,
-                                                                   AuthenticationContext context)
+    private boolean canResolveUserFromIdfAuthenticationResponse(HttpServletRequest request,
+                                                                AuthenticationContext context)
             throws AuthenticationFailedException {
 
         String identifierFromRequest = getIdentifierFromRequest(request);
@@ -414,7 +416,13 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             throw new InvalidCredentialsException(MagicLinkAuthErrorConstants.ErrorMessages.EMPTY_USERNAME.getCode(),
                     MagicLinkAuthErrorConstants.ErrorMessages.EMPTY_USERNAME.getMessage());
         }
-        return !skipPreProcessUsername(context, identifierFromRequest);
+        Map<String, String> runtimeParams = getRuntimeParams(context);
+        if (MapUtils.isNotEmpty(runtimeParams)) {
+            String skipPreProcessUsername = runtimeParams
+                    .get(MagicLinkAuthenticatorConstants.SKIP_IDENTIFIER_PRE_PROCESS);
+            return !Boolean.parseBoolean(skipPreProcessUsername);
+        }
+        return true;
     }
 
     /**
@@ -424,10 +432,8 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
      * @param context  The authentication context.
      * @throws AuthenticationFailedException In occasions of failing.
      */
-    private void findUserFromIdfAuthenticationResponse(HttpServletRequest request, AuthenticationContext context)
+    private void setResolvedUserInContext(HttpServletRequest request, AuthenticationContext context)
             throws AuthenticationFailedException {
-
-        UserResolver userResolver = new UserResolver();
 
         String username = getIdentifierFromRequest(request);
 
@@ -446,7 +452,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         }
 
         // Resolve user from multi attribute login.
-        Optional<User> multiAttributeLoginUser = userResolver.resolveUserFromMultiAttributeLogin(
+        Optional<User> multiAttributeLoginUser = UserResolver.resolveUserFromMultiAttributeLogin(
                 context, username);
         if (multiAttributeLoginUser.isPresent()) {
             User user = multiAttributeLoginUser.get();
@@ -457,7 +463,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         }
 
         // Resolve user during B2B flow.
-        Optional<User> orgUser = userResolver.resolveUserFromOrganizationHierarchy(context, tenantAwareUsername,
+        Optional<User> orgUser = UserResolver.resolveUserFromOrganizationHierarchy(context, tenantAwareUsername,
                 username);
         if (orgUser.isPresent()) {
             User user = orgUser.get();
@@ -468,7 +474,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
 
         if (StringUtils.isBlank(userId)) {
             // Resolve user from user store
-            Optional<User> userStoreUser = userResolver.resolveUserFromUserStore(tenantDomain,
+            Optional<User> userStoreUser = UserResolver.resolveUserFromUserStore(tenantDomain,
                     tenantAwareUsername, username);
             if (userStoreUser.isPresent()) {
                 User user = userStoreUser.get();
@@ -478,7 +484,10 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
 
         validateUsername(userId, username);
 
-        setUserInContext(username, authProperties, context, userId, tenantAwareUsername, tenantDomain);
+        username = FrameworkUtils.prependUserStoreDomainToName(username);
+        authProperties.put(MagicLinkAuthenticatorConstants.USER_NAME, username);
+        persistUsername(context, username);
+        setSubjectInContextWithUserId(context, userId, tenantAwareUsername, username, tenantDomain);
     }
 
     private Optional<String> validateEmailUsername(String identifierFromRequest, AuthenticationContext context)
@@ -513,39 +522,6 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         context.setSubject(user);
     }
 
-    private void setSubjectInContextWithoutUserId(AuthenticationContext context, String identifierFromRequest) {
-
-        AuthenticatedUser user = new AuthenticatedUser();
-        user.setUserName(identifierFromRequest);
-        context.setSubject(user);
-    }
-
-    private void setUserInContext(String username, Map<String, Object> authProperties, AuthenticationContext context,
-                         String userId, String tenantAwareUsername, String tenantDomain) {
-
-        username = FrameworkUtils.prependUserStoreDomainToName(username);
-        authProperties.put(MagicLinkAuthenticatorConstants.USER_NAME, username);
-        persistUsername(context, username);
-        setSubjectInContextWithUserId(context, userId, tenantAwareUsername, username, tenantDomain);
-    }
-
-    private boolean skipPreProcessUsername(AuthenticationContext context, String identifierFromRequest) {
-
-        Map<String, String> runtimeParams = getRuntimeParams(context);
-        if (MapUtils.isNotEmpty(runtimeParams)) {
-            String skipPreProcessUsername = runtimeParams
-                    .get(MagicLinkAuthenticatorConstants.SKIP_IDENTIFIER_PRE_PROCESS);
-            if (Boolean.parseBoolean(skipPreProcessUsername)) {
-                persistUsername(context, identifierFromRequest);
-
-                // Since the pre-processing is skipped, user id is not populated.
-                setSubjectInContextWithoutUserId(context, identifierFromRequest);
-                return true;
-            }
-        }
-        return false;
-    }
-
     private void validateUsername(String userId, String username)
             throws AuthenticationFailedException {
 
@@ -574,6 +550,20 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                     MagicLinkAuthErrorConstants.ErrorMessages.USER_DOES_NOT_EXISTS.getMessage(),
                     org.wso2.carbon.identity.application.common.model.User.getUserFromUserName(username));
         }
+    }
+
+    private void setSubjectInContextWithoutUserId(AuthenticationContext context, String identifierFromRequest) {
+
+        AuthenticatedUser user = new AuthenticatedUser();
+        user.setUserName(identifierFromRequest);
+        context.setSubject(user);
+    }
+
+    private void setUnresolvedUserInContext(HttpServletRequest request, AuthenticationContext context) {
+
+        String identifierFromRequest = getIdentifierFromRequest(request);
+        persistUsername(context, identifierFromRequest);
+        setSubjectInContextWithoutUserId(context, identifierFromRequest);
     }
 
     /**

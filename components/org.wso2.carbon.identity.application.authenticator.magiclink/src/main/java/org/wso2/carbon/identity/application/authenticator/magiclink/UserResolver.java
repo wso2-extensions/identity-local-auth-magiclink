@@ -23,13 +23,22 @@ import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 import java.util.Optional;
 
 /**
- * Resolves user.
+ * UserResolver class is responsible for resolving the user.
+ * <p>
+ * UserResolves resolves the user from:
+ * <ul>
+ * <li>Multi Attribute Login
+ * <li>Organization Hierarchy
+ * <li>User Store
+ * </ul>
+ * <p>
+ * and returns the User object.
  */
 public class UserResolver {
 
     private static final Log log = LogFactory.getLog(UserResolver.class);
 
-    protected Optional<User> resolveUserFromMultiAttributeLogin(AuthenticationContext context,
+    public static Optional<User> resolveUserFromMultiAttributeLogin(AuthenticationContext context,
                                                                               String username)
             throws InvalidCredentialsException {
 
@@ -51,7 +60,7 @@ public class UserResolver {
         return Optional.empty();
     }
 
-    protected Optional<User> resolveUserFromOrganizationHierarchy(AuthenticationContext context,
+    public static Optional<User> resolveUserFromOrganizationHierarchy(AuthenticationContext context,
                                                                   String tenantAwareUsername, String username)
             throws AuthenticationFailedException {
 
@@ -97,7 +106,7 @@ public class UserResolver {
         return Optional.empty();
     }
 
-    private boolean canResolveUserFromOrganizationHierarchy(AuthenticationContext context) {
+    private static boolean canResolveUserFromOrganizationHierarchy(AuthenticationContext context) {
 
         if (context.getCallerPath() != null && context.getCallerPath().startsWith("/t/")) {
             return false;
@@ -107,7 +116,8 @@ public class UserResolver {
                 MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equalsIgnoreCase(requestTenantDomain);
     }
 
-    protected Optional<User> resolveUserFromUserStore(String tenantDomain, String tenantAwareUsername, String username)
+    public static Optional<User> resolveUserFromUserStore(String tenantDomain,
+                                                          String tenantAwareUsername, String username)
             throws AuthenticationFailedException {
 
         AbstractUserStoreManager userStoreManager;
