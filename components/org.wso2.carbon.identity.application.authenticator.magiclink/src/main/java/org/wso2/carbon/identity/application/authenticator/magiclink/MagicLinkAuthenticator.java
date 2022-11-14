@@ -30,6 +30,7 @@ import org.wso2.carbon.identity.application.authentication.framework.context.Aut
 import org.wso2.carbon.identity.application.authentication.framework.exception.AuthenticationFailedException;
 import org.wso2.carbon.identity.application.authentication.framework.exception.InvalidCredentialsException;
 import org.wso2.carbon.identity.application.authentication.framework.exception.LogoutFailedException;
+import org.wso2.carbon.identity.application.authentication.framework.exception.UserIdNotFoundException;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
@@ -448,23 +449,14 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             context.setProperties(authProperties);
         }
 
-        Optional<String> userIdFromMultiAttributeLogin = resolveUserFromMultiAttributeLogin(context,
-                username, authProperties);
-        if (userIdFromMultiAttributeLogin.isPresent()) {
-            userId = userIdFromMultiAttributeLogin.get();
-        }
-        Optional<String> userIdFromOrganizationHierarchy = resolveUserFromOrganizationHierarchy(context,
-                tenantAwareUsername, username, authProperties);
-        if (userIdFromOrganizationHierarchy.isPresent()) {
-            userId = userIdFromOrganizationHierarchy.get();
-        }
-        Optional<String> userIdFromUserStore = resolveUserFromUserStore(tenantDomain, tenantAwareUsername,
-                userId, username, authProperties, context);
-        if (userIdFromUserStore.isPresent()) {
-            userId = userIdFromUserStore.get();
-        }
-        if (StringUtils.isBlank(userId)) {
-            persistUser(username, authProperties, context, null, tenantAwareUsername, tenantDomain);
+        resolveUserFromMultiAttributeLogin(context, username, authProperties);
+
+        resolveUserFromOrganizationHierarchy(context, tenantAwareUsername, username, authProperties);
+
+        resolveUserFromUserStore(tenantDomain, tenantAwareUsername, username, authProperties, context);
+
+        if (StringUtils.isBlank(getUserIdFromContext(context))) {
+            setUserInContext(username, authProperties, context, null, tenantAwareUsername, tenantDomain);
         }
     }
 
@@ -507,7 +499,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         context.setSubject(user);
     }
 
-    private void persistUser(String username, Map<String, Object> authProperties, AuthenticationContext context,
+    private void setUserInContext(String username, Map<String, Object> authProperties, AuthenticationContext context,
                          String userId, String tenantAwareUsername, String tenantDomain) {
 
         username = FrameworkUtils.prependUserStoreDomainToName(username);
@@ -549,7 +541,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                 username = UserCoreUtil.addTenantDomainToEntry(resolvedUserResult.getUser().getUsername(),
                         context.getTenantDomain());
                 String userId = resolvedUserResult.getUser().getUserID();
-                persistUser(username, authProperties, context, userId, tenantAwareUsername, tenantDomain);
+                setUserInContext(username, authProperties, context, userId, tenantAwareUsername, tenantDomain);
                 return Optional.ofNullable(userId);
             } else {
                 throw new InvalidCredentialsException(
@@ -587,7 +579,8 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                 tenantAwareUsername = user.getUsername();
                 username = UserCoreUtil.addTenantDomainToEntry(tenantAwareUsername, user.getTenantDomain());
                 String userId = user.getUserID();
-                persistUser(username, authProperties, context, userId, tenantAwareUsername, user.getTenantDomain());
+                setUserInContext(username, authProperties, context, userId,
+                        tenantAwareUsername, user.getTenantDomain());
                 return Optional.ofNullable(userId);
             }
         } catch (OrganizationManagementException e) {
@@ -623,11 +616,12 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                 MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equalsIgnoreCase(requestTenantDomain);
     }
 
-    private Optional<String> resolveUserFromUserStore(String tenantDomain, String tenantAwareUsername, String userId,
+    private Optional<String> resolveUserFromUserStore(String tenantDomain, String tenantAwareUsername,
                                           String username, Map<String, Object> authProperties,
                                           AuthenticationContext context)
             throws AuthenticationFailedException {
 
+        String userId = getUserIdFromContext(context);
         if (getAuthenticatorConfig().getParameterMap() == null) {
             return Optional.empty();
         }
@@ -652,7 +646,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                 // or not.
                 if (StringUtils.isBlank(userId)) {
                     userId = userStoreManager.getUserIDFromUserName(tenantAwareUsername);
-                    persistUser(username, authProperties, context, userId, tenantAwareUsername, tenantDomain);
+                    setUserInContext(username, authProperties, context, userId, tenantAwareUsername, tenantDomain);
                 }
             } else {
                 throw new AuthenticationFailedException(
@@ -706,6 +700,16 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                     MagicLinkAuthErrorConstants.ErrorMessages.USER_DOES_NOT_EXISTS.getMessage(),
                     org.wso2.carbon.identity.application.common.model.User.getUserFromUserName(username));
         }
+    }
+
+    private String getUserIdFromContext(AuthenticationContext context) {
+        String userId;
+        try {
+            userId = context.getSubject().getUserId();
+        } catch (UserIdNotFoundException | NullPointerException e) {
+            userId = null;
+        }
+        return userId;
     }
 
     /**
