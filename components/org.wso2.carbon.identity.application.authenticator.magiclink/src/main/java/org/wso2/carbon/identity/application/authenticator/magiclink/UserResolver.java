@@ -25,7 +25,7 @@ import java.util.Optional;
 /**
  * UserResolver class is responsible for resolving the user.
  * <p>
- * UserResolves resolves the user from:
+ * UserResolver resolves the user from:
  * <ul>
  * <li>Multi Attribute Login
  * <li>Organization Hierarchy
