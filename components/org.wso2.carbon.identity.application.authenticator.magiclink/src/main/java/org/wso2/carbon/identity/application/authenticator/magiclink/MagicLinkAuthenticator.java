@@ -476,10 +476,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             }
         }
 
-        if (validateUsername(userId, username)) {
-            //TODO: user tenant domain has to be an attribute in the AuthenticationContext
-            authProperties.put("user-tenant-domain", tenantDomain);
-        }
+        validateUsername(userId, username);
 
         setUserInContext(username, authProperties, context, userId, tenantAwareUsername, tenantDomain);
     }
@@ -549,16 +546,16 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         return false;
     }
 
-    private boolean validateUsername(String userId, String username)
+    private void validateUsername(String userId, String username)
             throws AuthenticationFailedException {
 
         if (getAuthenticatorConfig().getParameterMap() == null) {
-            return false;
+            return;
         }
         String validateUsername = getAuthenticatorConfig().getParameterMap()
                 .get(MagicLinkAuthenticatorConstants.VALIDATE_USERNAME);
         if (!Boolean.parseBoolean(validateUsername)) {
-            return false;
+            return;
         }
         if (StringUtils.isBlank(userId)) {
             if (log.isDebugEnabled()) {
@@ -577,7 +574,6 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                     MagicLinkAuthErrorConstants.ErrorMessages.USER_DOES_NOT_EXISTS.getMessage(),
                     org.wso2.carbon.identity.application.common.model.User.getUserFromUserName(username));
         }
-        return true;
     }
 
     /**
