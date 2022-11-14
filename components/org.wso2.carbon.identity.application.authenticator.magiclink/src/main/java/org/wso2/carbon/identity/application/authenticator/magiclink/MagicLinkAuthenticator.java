@@ -441,7 +441,6 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         }
 
         String tenantAwareUsername = MultitenantUtils.getTenantAwareUsername(username);
-        String userId = null;
         String tenantDomain = MultitenantUtils.getTenantDomain(username);
         Map<String, Object> authProperties = context.getProperties();
         if (MapUtils.isEmpty(authProperties)) {
@@ -453,7 +452,14 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
 
         resolveUserFromOrganizationHierarchy(context, tenantAwareUsername, username, authProperties);
 
-        resolveUserFromUserStore(tenantDomain, tenantAwareUsername, username, authProperties, context);
+        if (StringUtils.isBlank(getUserIdFromContext(context))) {
+            resolveUserFromUserStore(tenantDomain, tenantAwareUsername, username, authProperties, context);
+        }
+
+        if (validateUsername(context, username)) {
+            //TODO: user tenant domain has to be an attribute in the AuthenticationContext
+            authProperties.put("user-tenant-domain", tenantDomain);
+        }
 
         if (StringUtils.isBlank(getUserIdFromContext(context))) {
             setUserInContext(username, authProperties, context, null, tenantAwareUsername, tenantDomain);
@@ -621,15 +627,6 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                                           AuthenticationContext context)
             throws AuthenticationFailedException {
 
-        String userId = getUserIdFromContext(context);
-        if (getAuthenticatorConfig().getParameterMap() == null) {
-            return Optional.empty();
-        }
-        String validateUsername = getAuthenticatorConfig().getParameterMap()
-                .get(MagicLinkAuthenticatorConstants.VALIDATE_USERNAME);
-        if (!Boolean.parseBoolean(validateUsername)) {
-            return Optional.empty();
-        }
         AbstractUserStoreManager userStoreManager;
         // Check if the username exists.
         try {
@@ -644,10 +641,10 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                 // If the user id is already resolved from the multi attribute login, we can assume the user
                 // exists. If not, we will try to resolve the user id, which will indicate if the user exists
                 // or not.
-                if (StringUtils.isBlank(userId)) {
-                    userId = userStoreManager.getUserIDFromUserName(tenantAwareUsername);
-                    setUserInContext(username, authProperties, context, userId, tenantAwareUsername, tenantDomain);
-                }
+                String userId = userStoreManager.getUserIDFromUserName(tenantAwareUsername);
+                setUserInContext(username, authProperties, context, userId, tenantAwareUsername, tenantDomain);
+                return Optional.ofNullable(userId);
+
             } else {
                 throw new AuthenticationFailedException(
                         MagicLinkAuthErrorConstants.ErrorMessages
@@ -675,14 +672,20 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                     org.wso2.carbon.identity.application.common.model.User.getUserFromUserName(username), e);
         }
 
-        handleUserNotExistError(username, userId);
-        //TODO: user tenant domain has to be an attribute in the AuthenticationContext
-        authProperties.put("user-tenant-domain", tenantDomain);
-        return Optional.of(userId);
     }
 
-    private void handleUserNotExistError(String username, String userId)
+    private boolean validateUsername(AuthenticationContext context, String username)
             throws AuthenticationFailedException {
+
+        String userId = getUserIdFromContext(context);
+        if (getAuthenticatorConfig().getParameterMap() == null) {
+            return false;
+        }
+        String validateUsername = getAuthenticatorConfig().getParameterMap()
+                .get(MagicLinkAuthenticatorConstants.VALIDATE_USERNAME);
+        if (!Boolean.parseBoolean(validateUsername)) {
+            return false;
+        }
         if (StringUtils.isBlank(userId)) {
             if (log.isDebugEnabled()) {
                 log.debug("User does not exists");
@@ -700,6 +703,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                     MagicLinkAuthErrorConstants.ErrorMessages.USER_DOES_NOT_EXISTS.getMessage(),
                     org.wso2.carbon.identity.application.common.model.User.getUserFromUserName(username));
         }
+        return true;
     }
 
     private String getUserIdFromContext(AuthenticationContext context) {
