@@ -468,7 +468,8 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
 
         if (StringUtils.isBlank(userId)) {
             // Resolve user from user store
-            Optional<User> userStoreUser = userResolver.resolveUserFromUserStore(tenantDomain, username);
+            Optional<User> userStoreUser = userResolver.resolveUserFromUserStore(tenantDomain,
+                    tenantAwareUsername, username);
             if (userStoreUser.isPresent()) {
                 User user = userStoreUser.get();
                 userId = user.getUserID();

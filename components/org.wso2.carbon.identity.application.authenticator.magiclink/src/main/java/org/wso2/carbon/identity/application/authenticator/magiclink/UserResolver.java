@@ -107,7 +107,7 @@ public class UserResolver {
                 MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equalsIgnoreCase(requestTenantDomain);
     }
 
-    protected Optional<User> resolveUserFromUserStore(String tenantDomain, String username)
+    protected Optional<User> resolveUserFromUserStore(String tenantDomain, String tenantAwareUsername, String username)
             throws AuthenticationFailedException {
 
         AbstractUserStoreManager userStoreManager;
@@ -121,7 +121,8 @@ public class UserResolver {
 
             if (userRealm != null) {
                 userStoreManager = (AbstractUserStoreManager) userRealm.getUserStoreManager();
-                User user = userStoreManager.getUser(null, username);
+                String userId = userStoreManager.getUserIDFromUserName(tenantAwareUsername);
+                User user = userStoreManager.getUser(userId, username);
                 return Optional.ofNullable(user);
 
             } else {
