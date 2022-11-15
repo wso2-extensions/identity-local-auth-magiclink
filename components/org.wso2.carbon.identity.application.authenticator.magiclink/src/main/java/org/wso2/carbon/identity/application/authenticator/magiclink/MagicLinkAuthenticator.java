@@ -121,7 +121,6 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             context.setProperty(MagicLinkAuthenticatorConstants.IS_IDF_INITIATED_FROM_MAGIC_LINK_AUTH, true);
             String loginPage = ConfigurationFacade.getInstance().getAuthenticationEndpointURL();
             String queryParams = context.getContextIdIncludedQueryParams();
-
             try {
                 String retryParam = "";
                 if (log.isDebugEnabled()) {
@@ -137,8 +136,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                                 .getUserFromUserName(request.getParameter(MagicLinkAuthenticatorConstants.USER_NAME));
                 throw new AuthenticationFailedException(
                         MagicLinkAuthErrorConstants.ErrorMessages.SYSTEM_ERROR_WHILE_AUTHENTICATING.getCode(),
-                        e.getMessage(),
-                        user, e);
+                        e.getMessage(), user, e);
             }
         } else {
             User user = getUser(context.getLastAuthenticatedUser());
@@ -449,18 +447,14 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             context.setProperties(authProperties);
         }
 
-        // Resolve user from multi attribute login.
-        Optional<User> multiAttributeLoginUser = UserResolver.resolveUserFromMultiAttributeLogin(
-                context, username);
+        Optional<User> multiAttributeLoginUser = UserResolver.resolveUserFromMultiAttributeLogin(context, username);
         if (multiAttributeLoginUser.isPresent()) {
             User user = multiAttributeLoginUser.get();
             tenantAwareUsername = user.getUsername();
-            username = UserCoreUtil.addTenantDomainToEntry(user.getUsername(),
-                    context.getTenantDomain());
+            username = UserCoreUtil.addTenantDomainToEntry(user.getUsername(), context.getTenantDomain());
             userId = user.getUserID();
         }
 
-        // Resolve user during B2B flow.
         Optional<User> orgUser = UserResolver.resolveUserFromOrganizationHierarchy(context, tenantAwareUsername,
                 username);
         if (orgUser.isPresent()) {
@@ -471,9 +465,8 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         }
 
         if (StringUtils.isBlank(userId)) {
-            // Resolve user from user store
-            Optional<User> userStoreUser = UserResolver.resolveUserFromUserStore(tenantDomain,
-                    tenantAwareUsername, username);
+            Optional<User> userStoreUser = UserResolver.resolveUserFromUserStore(tenantDomain, tenantAwareUsername,
+                    username);
             if (userStoreUser.isPresent()) {
                 User user = userStoreUser.get();
                 userId = user.getUserID();
@@ -484,12 +477,12 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
 
         username = FrameworkUtils.prependUserStoreDomainToName(username);
         authProperties.put(MagicLinkAuthenticatorConstants.USER_NAME, username);
-        persistUsername(context, username);
+        addUsernameToContext(context, username);
         setSubjectInContextWithUserId(context, userId, tenantAwareUsername, username, tenantDomain);
     }
 
     private Optional<String> validateEmailUsername(String identifierFromRequest, AuthenticationContext context)
-    throws InvalidCredentialsException {
+            throws InvalidCredentialsException {
 
         if (!IdentityUtil.isEmailUsernameValidationDisabled()) {
             FrameworkUtils.validateUsername(identifierFromRequest, context);
@@ -498,11 +491,11 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         return Optional.empty();
     }
 
-    private void persistUsername(AuthenticationContext context, String username) {
+    private void addUsernameToContext(AuthenticationContext context, String username) {
 
         Map<String, String> identifierParams = new HashMap<>();
-        identifierParams.put(FrameworkConstants.JSAttributes.JS_OPTIONS_USERNAME, username);
         Map<String, Map<String, String>> contextParams = new HashMap<>();
+        identifierParams.put(FrameworkConstants.JSAttributes.JS_OPTIONS_USERNAME, username);
         contextParams.put(FrameworkConstants.JSAttributes.JS_COMMON_OPTIONS, identifierParams);
         //Identifier first is the first authenticator.
         context.getPreviousAuthenticatedIdPs().clear();
@@ -537,12 +530,10 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             }
             if (IdentityUtil.threadLocalProperties.get()
                     .get(MagicLinkAuthenticatorConstants.RE_CAPTCHA_USER_DOMAIN) != null) {
-                username = IdentityUtil.addDomainToName(
-                        username, IdentityUtil.threadLocalProperties.get()
+                username = IdentityUtil.addDomainToName(username, IdentityUtil.threadLocalProperties.get()
                                 .get(MagicLinkAuthenticatorConstants.RE_CAPTCHA_USER_DOMAIN).toString());
             }
-            IdentityUtil.threadLocalProperties.get()
-                    .remove(MagicLinkAuthenticatorConstants.RE_CAPTCHA_USER_DOMAIN);
+            IdentityUtil.threadLocalProperties.get().remove(MagicLinkAuthenticatorConstants.RE_CAPTCHA_USER_DOMAIN);
             throw new InvalidCredentialsException(
                     MagicLinkAuthErrorConstants.ErrorMessages.USER_DOES_NOT_EXISTS.getCode(),
                     MagicLinkAuthErrorConstants.ErrorMessages.USER_DOES_NOT_EXISTS.getMessage(),

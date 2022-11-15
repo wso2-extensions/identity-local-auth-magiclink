@@ -1,8 +1,6 @@
 package org.wso2.carbon.identity.application.authenticator.magiclink;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.authentication.framework.context.AuthenticationContext;
 import org.wso2.carbon.identity.application.authentication.framework.exception.AuthenticationFailedException;
 import org.wso2.carbon.identity.application.authentication.framework.exception.InvalidCredentialsException;
@@ -36,10 +34,7 @@ import java.util.Optional;
  */
 public class UserResolver {
 
-    private static final Log log = LogFactory.getLog(UserResolver.class);
-
-    public static Optional<User> resolveUserFromMultiAttributeLogin(AuthenticationContext context,
-                                                                              String username)
+    public static Optional<User> resolveUserFromMultiAttributeLogin(AuthenticationContext context, String username)
             throws InvalidCredentialsException {
 
         if (MagicLinkServiceDataHolder.getInstance().getMultiAttributeLoginService()
@@ -50,12 +45,11 @@ public class UserResolver {
             if (resolvedUserResult != null && ResolvedUserResult.UserResolvedStatus.SUCCESS.
                     equals(resolvedUserResult.getResolvedStatus())) {
                 return Optional.of(resolvedUserResult.getUser());
-            } else {
-                throw new InvalidCredentialsException(
-                        MagicLinkAuthErrorConstants.ErrorMessages.USER_DOES_NOT_EXISTS.getCode(),
-                        MagicLinkAuthErrorConstants.ErrorMessages.USER_DOES_NOT_EXISTS.getMessage(),
-                        org.wso2.carbon.identity.application.common.model.User.getUserFromUserName(username));
             }
+            throw new InvalidCredentialsException(
+                    MagicLinkAuthErrorConstants.ErrorMessages.USER_DOES_NOT_EXISTS.getCode(),
+                    MagicLinkAuthErrorConstants.ErrorMessages.USER_DOES_NOT_EXISTS.getMessage(),
+                    org.wso2.carbon.identity.application.common.model.User.getUserFromUserName(username));
         }
         return Optional.empty();
     }
@@ -70,8 +64,7 @@ public class UserResolver {
         String requestTenantDomain = context.getUserTenantDomain();
         try {
             int tenantId = IdentityTenantUtil.getTenantId(requestTenantDomain);
-            Tenant tenant =
-                    (Tenant) MagicLinkServiceDataHolder.getInstance().getRealmService().getTenantManager()
+            Tenant tenant = (Tenant) MagicLinkServiceDataHolder.getInstance().getRealmService().getTenantManager()
                             .getTenant(tenantId);
             if (tenant != null && StringUtils.isNotBlank(tenant.getAssociatedOrganizationUUID())) {
                 User user = MagicLinkServiceDataHolder.getInstance()
@@ -79,25 +72,15 @@ public class UserResolver {
                         .resolveUserFromResidentOrganization(tenantAwareUsername, null,
                                 tenant.getAssociatedOrganizationUUID())
                         .orElseThrow(() -> new AuthenticationFailedException(
-                                MagicLinkAuthErrorConstants.ErrorMessages
-                                        .USER_NOT_IDENTIFIED_IN_HIERARCHY.getCode()));
+                                MagicLinkAuthErrorConstants.ErrorMessages.USER_NOT_IDENTIFIED_IN_HIERARCHY.getCode()));
                 return Optional.of(user);
             }
         } catch (OrganizationManagementException e) {
-
-            if (log.isDebugEnabled()) {
-                log.debug("Failed while trying to resolving user's resident org", e);
-            }
             throw new AuthenticationFailedException(
                     MagicLinkAuthErrorConstants.ErrorMessages
-                            .ORGANIZATION_MGT_EXCEPTION_WHILE_TRYING_TO_RESOLVE_RESIDENT_ORG.getCode(),
-                    e.getMessage(),
+                            .ORGANIZATION_MGT_EXCEPTION_WHILE_TRYING_TO_RESOLVE_RESIDENT_ORG.getCode(), e.getMessage(),
                     org.wso2.carbon.identity.application.common.model.User.getUserFromUserName(username), e);
         } catch (UserStoreException e) {
-
-            if (log.isDebugEnabled()) {
-                log.debug("Failed while trying to authenticate", e);
-            }
             throw new AuthenticationFailedException(
                     MagicLinkAuthErrorConstants.ErrorMessages
                             .USER_STORE_EXCEPTION_WHILE_TRYING_TO_AUTHENTICATE.getCode(), e.getMessage(),
@@ -127,34 +110,24 @@ public class UserResolver {
                     .getRealmService().getTenantManager().getTenantId(tenantDomain);
             UserRealm userRealm = MagicLinkServiceDataHolder.getInstance().getRealmService()
                     .getTenantUserRealm(tenantId);
-
             if (userRealm != null) {
                 userStoreManager = (AbstractUserStoreManager) userRealm.getUserStoreManager();
                 String userId = userStoreManager.getUserIDFromUserName(tenantAwareUsername);
                 User user = userStoreManager.getUser(userId, username);
                 return Optional.ofNullable(user);
-
-            } else {
-                throw new AuthenticationFailedException(
-                        MagicLinkAuthErrorConstants.ErrorMessages
-                                .CANNOT_FIND_THE_USER_REALM_FOR_THE_GIVEN_TENANT.getCode(), String.format(
-                        MagicLinkAuthErrorConstants.ErrorMessages
-                                .CANNOT_FIND_THE_USER_REALM_FOR_THE_GIVEN_TENANT.getMessage(), tenantId),
-                        org.wso2.carbon.identity.application.common.model.User.getUserFromUserName(username));
             }
+            throw new AuthenticationFailedException(
+                    MagicLinkAuthErrorConstants.ErrorMessages
+                            .CANNOT_FIND_THE_USER_REALM_FOR_THE_GIVEN_TENANT.getCode(), String.format(
+                    MagicLinkAuthErrorConstants.ErrorMessages
+                            .CANNOT_FIND_THE_USER_REALM_FOR_THE_GIVEN_TENANT.getMessage(), tenantId),
+                    org.wso2.carbon.identity.application.common.model.User.getUserFromUserName(username));
         } catch (IdentityRuntimeException e) {
-            if (log.isDebugEnabled()) {
-                log.debug("Failed while trying to get the tenant ID of the user " +
-                        username, e);
-            }
             throw new AuthenticationFailedException(
                     MagicLinkAuthErrorConstants.ErrorMessages.INVALID_TENANT_ID_OF_THE_USER.getCode(),
                     e.getMessage(),
                     org.wso2.carbon.identity.application.common.model.User.getUserFromUserName(username), e);
         } catch (org.wso2.carbon.user.api.UserStoreException e) {
-            if (log.isDebugEnabled()) {
-                log.debug("Failed while trying to authenticate", e);
-            }
             throw new AuthenticationFailedException(
                     MagicLinkAuthErrorConstants.ErrorMessages.USER_STORE_EXCEPTION_WHILE_TRYING_TO_AUTHENTICATE
                             .getCode(), e.getMessage(),
