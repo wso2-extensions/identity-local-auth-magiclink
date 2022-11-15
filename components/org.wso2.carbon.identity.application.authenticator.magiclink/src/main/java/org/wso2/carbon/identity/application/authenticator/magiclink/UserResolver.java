@@ -92,11 +92,11 @@ public class UserResolver {
     private static boolean canResolveUserFromOrganizationHierarchy(AuthenticationContext context) {
 
         if (context.getCallerPath() != null && context.getCallerPath().startsWith("/t/")) {
-            return false;
+            return true;
         }
         String requestTenantDomain = context.getUserTenantDomain();
-        return !StringUtils.isNotBlank(requestTenantDomain) ||
-                MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equalsIgnoreCase(requestTenantDomain);
+        return StringUtils.isNotBlank(requestTenantDomain) &&
+                !MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equalsIgnoreCase(requestTenantDomain);
     }
 
     public static Optional<User> resolveUserFromUserStore(String tenantDomain,
