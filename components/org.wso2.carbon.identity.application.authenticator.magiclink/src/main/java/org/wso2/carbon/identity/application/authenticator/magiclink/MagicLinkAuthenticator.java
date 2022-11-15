@@ -96,6 +96,8 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             }
             if (canResolveUserFromIdfAuthenticationResponse(request, context)) {
                 setResolvedUserInContext(request, context);
+            } else {
+                setUnresolvedUserInContext(request, context);
             }
             initiateAuthenticationRequest(request, response, context);
             context.setCurrentAuthenticator(getName());
@@ -539,6 +541,20 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                     MagicLinkAuthErrorConstants.ErrorMessages.USER_DOES_NOT_EXISTS.getMessage(),
                     org.wso2.carbon.identity.application.common.model.User.getUserFromUserName(username));
         }
+    }
+
+    private void setSubjectInContextWithoutUserId(AuthenticationContext context, String identifierFromRequest) {
+
+        AuthenticatedUser user = new AuthenticatedUser();
+        user.setUserName(identifierFromRequest);
+        context.setSubject(user);
+    }
+
+    private void setUnresolvedUserInContext(HttpServletRequest request, AuthenticationContext context) {
+
+        String identifierFromRequest = getIdentifierFromRequest(request);
+        addUsernameToContext(context, identifierFromRequest);
+        setSubjectInContextWithoutUserId(context, identifierFromRequest);
     }
 
     /**
