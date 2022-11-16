@@ -43,6 +43,7 @@ import org.wso2.carbon.identity.core.ServiceURLBuilder;
 import org.wso2.carbon.identity.core.URLBuilderException;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.user.api.UserRealm;
@@ -72,7 +73,7 @@ import static org.wso2.carbon.identity.application.authentication.framework.util
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.BLOCKED_USERSTORE_DOMAINS_LIST;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.BLOCKED_USERSTORE_DOMAINS_SEPARATOR;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.DEFAULT_EXPIRY_TIME;
-import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.EXPIRY_TIME;
+import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.EXPIRYTIME;
 
 /**
  * Authenticator of MagicLink.
@@ -87,24 +88,25 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                                            HttpServletResponse response, AuthenticationContext context)
             throws AuthenticationFailedException, LogoutFailedException {
 
-        if (isIdentifierFirstRequest(request)) {
-            if (context.isLogoutRequest()) {
-                return AuthenticatorFlowStatus.SUCCESS_COMPLETED;
-            }
-            if (getName().equals(context.getProperty(FrameworkConstants.LAST_FAILED_AUTHENTICATOR))) {
-                context.setRetrying(true);
-            }
-            if (canResolveUserFromIdfAuthenticationResponse(request, context)) {
-                setResolvedUserInContext(request, context);
-            } else {
-                setUnresolvedUserInContext(request, context);
-            }
-            initiateAuthenticationRequest(request, response, context);
-            context.setCurrentAuthenticator(getName());
-            context.setRetrying(false);
-            return AuthenticatorFlowStatus.INCOMPLETE;
+        if (!isIdentifierFirstRequest(request)) {
+            return super.process(request, response, context);
         }
-        return super.process(request, response, context);
+        if (context.isLogoutRequest()) {
+            return AuthenticatorFlowStatus.SUCCESS_COMPLETED;
+        }
+        if (getName().equals(context.getProperty(FrameworkConstants.LAST_FAILED_AUTHENTICATOR))) {
+            context.setRetrying(true);
+        }
+        if (canResolveUserFromIdfAuthenticationResponse(request, context)) {
+            User user = resolveUser(request, context);
+            setResolvedUserInContext(context, user);
+        } else {
+            setUnresolvedUserInContext(request, context);
+        }
+        initiateAuthenticationRequest(request, response, context);
+        context.setCurrentAuthenticator(getName());
+        context.setRetrying(false);
+        return AuthenticatorFlowStatus.INCOMPLETE;
     }
 
     /**
@@ -124,18 +126,20 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             String loginPage = ConfigurationFacade.getInstance().getAuthenticationEndpointURL();
             String queryParams = context.getContextIdIncludedQueryParams();
             try {
-                String retryParam = "";
                 if (log.isDebugEnabled()) {
-                    log.debug("Identity error message context is null");
+                    String logMsg = String.format("Redirecting to identifier first flow since " +
+                                    "last authenticated user is null in SP: %s",
+                            context.getServiceProviderName());
+                    log.debug(logMsg);
                 }
                 response.sendRedirect(loginPage + ("?" + queryParams)
                         + MagicLinkAuthenticatorConstants.AUTHENTICATORS +
                         MagicLinkAuthenticatorConstants.IDF_HANDLER_NAME + ":" +
-                        MagicLinkAuthenticatorConstants.LOCAL + retryParam);
+                        MagicLinkAuthenticatorConstants.LOCAL);
             } catch (IOException e) {
                 org.wso2.carbon.identity.application.common.model.User user =
                         org.wso2.carbon.identity.application.common.model.User
-                                .getUserFromUserName(request.getParameter(MagicLinkAuthenticatorConstants.USER_NAME));
+                                .getUserFromUserName(request.getParameter(MagicLinkAuthenticatorConstants.USERNAME));
                 throw new AuthenticationFailedException(
                         MagicLinkAuthErrorConstants.ErrorMessages.SYSTEM_ERROR_WHILE_AUTHENTICATING.getCode(),
                         e.getMessage(), user, e);
@@ -234,7 +238,10 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
     public boolean canHandle(HttpServletRequest httpServletRequest) {
 
         if (isIdentifierFirstRequest(httpServletRequest)) {
-            String userName = httpServletRequest.getParameter(MagicLinkAuthenticatorConstants.USER_NAME);
+            if (log.isDebugEnabled()) {
+                log.debug("Magic link authenticator is handling identifier first flow ");
+            }
+            String userName = httpServletRequest.getParameter(MagicLinkAuthenticatorConstants.USERNAME);
             String restart = httpServletRequest.getParameter(RESTART_FLOW);
 
             return userName != null || restart != null;
@@ -283,25 +290,23 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
     protected void triggerEvent(String username, String userStoreDomain, String tenantDomain, String magicToken,
             String applicationName, String expiryTime) throws AuthenticationFailedException {
 
-        String eventName = "TRIGGER_NOTIFICATION";
-        HashMap<String, Object> properties = new HashMap<>();
-        properties.put("user-name", username);
-        properties.put("userstore-domain", userStoreDomain);
-        properties.put("tenant-domain", tenantDomain);
-        properties.put("magicToken", magicToken);
-        properties.put("TEMPLATE_TYPE", "magicLink");
-        properties.put("application-name", applicationName);
-        properties.put("expiry-time", expiryTime);
+        String eventName = IdentityEventConstants.Event.TRIGGER_NOTIFICATION;
+        Map<String, Object> properties = new HashMap<>();
+        properties.put(IdentityEventConstants.EventProperty.USER_NAME, username);
+        properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, userStoreDomain);
+        properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, tenantDomain);
+        properties.put(MagicLinkAuthenticatorConstants.MAGIC_TOKEN, magicToken);
+        properties.put(MagicLinkAuthenticatorConstants.TEMPLATE_TYPE, MagicLinkAuthenticatorConstants.EVENT_NAME);
+        properties.put(IdentityEventConstants.EventProperty.APPLICATION_NAME, applicationName);
+        properties.put(MagicLinkAuthenticatorConstants.EXPIRY_TIME, expiryTime);
         Event identityMgtEvent = new Event(eventName, properties);
         try {
             MagicLinkServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
         } catch (IdentityEventException e) {
             String errorMsg = String.format(
-                    "Error occurred while sending the notification for the user: %s in the tenant: %s", username,
+                    "Error occurred while triggering the event for the user: %s in the tenant: %s", username,
                     tenantDomain);
-            if (log.isDebugEnabled()) {
-                log.debug(errorMsg, e);
-            }
+            throw new AuthenticationFailedException(errorMsg, e.getCause());
         }
     }
 
@@ -319,8 +324,8 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
 
     private long getExpiryTime() {
 
-        if (StringUtils.isNotBlank(getAuthenticatorConfig().getParameterMap().get(EXPIRY_TIME))) {
-            return Long.parseLong(getAuthenticatorConfig().getParameterMap().get(EXPIRY_TIME));
+        if (StringUtils.isNotBlank(getAuthenticatorConfig().getParameterMap().get(EXPIRYTIME))) {
+            return Long.parseLong(getAuthenticatorConfig().getParameterMap().get(EXPIRYTIME));
         }
         return DEFAULT_EXPIRY_TIME;
     }
@@ -329,41 +334,42 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
 
         User user = null;
         String tenantDomain = authenticatedUser.getTenantDomain();
-        if (tenantDomain != null) {
-            int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
-            try {
-                UserRealm userRealm = MagicLinkServiceDataHolder.getInstance().getRealmService()
-                        .getTenantUserRealm(tenantId);
-                if (userRealm != null) {
-                    UserStoreManager userStoreManager = (UserStoreManager) userRealm.getUserStoreManager();
-                    List<User> userList = ((AbstractUserStoreManager) userStoreManager).getUserListWithID(
-                            USERNAME_CLAIM, authenticatedUser.getUserName(), null);
-                    if (userList.isEmpty()) {
-                        userList = ((AbstractUserStoreManager) userStoreManager).getUserListWithID(
-                                EMAIL_ADDRESS_CLAIM, authenticatedUser.getUserName(), null);
-                    }
-                    userList = getValidUsers(userList);
-                    if (CollectionUtils.isEmpty(userList)) {
-                        return null;
-                    }
-                    if (userList.size() > 1) {
-                        if (log.isDebugEnabled()) {
-                            log.debug("There are more than one user with the provided username claim value: "
-                                    + authenticatedUser.getUserName());
-                        }
-                        return null;
-                    }
-                    user = userList.get(0);
-                } else {
-                    log.error("Cannot find the user realm for the given tenant: " + tenantDomain);
+        if (tenantDomain == null) {
+            return null;
+        }
+        int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
+        try {
+            UserRealm userRealm = MagicLinkServiceDataHolder.getInstance().getRealmService()
+                    .getTenantUserRealm(tenantId);
+            if (userRealm != null) {
+                UserStoreManager userStoreManager = (UserStoreManager) userRealm.getUserStoreManager();
+                List<User> userList = ((AbstractUserStoreManager) userStoreManager).getUserListWithID(
+                        USERNAME_CLAIM, authenticatedUser.getUserName(), null);
+                if (userList.isEmpty()) {
+                    userList = ((AbstractUserStoreManager) userStoreManager).getUserListWithID(
+                            EMAIL_ADDRESS_CLAIM, authenticatedUser.getUserName(), null);
                 }
-            } catch (UserStoreException e) {
-                String msg = "getUserListWithID function failed while retrieving the user list.";
-                if (log.isDebugEnabled()) {
-                    log.debug(msg, e);
+                userList = getValidUsers(userList);
+                if (CollectionUtils.isEmpty(userList)) {
+                    return null;
                 }
-                throw new AuthenticationFailedException(msg, e);
+                if (userList.size() > 1) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("There are more than one user with the provided username claim value: "
+                                + authenticatedUser.getUserName());
+                    }
+                    return null;
+                }
+                user = userList.get(0);
+            } else {
+                log.error("Cannot find the user realm for the given tenant: " + tenantDomain);
             }
+        } catch (UserStoreException e) {
+            String msg = "getUserListWithID function failed while retrieving the user list.";
+            if (log.isDebugEnabled()) {
+                log.debug(msg, e);
+            }
+            throw new AuthenticationFailedException(msg, e);
         }
         return user;
     }
@@ -402,7 +408,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
 
     private String getIdentifierFromRequest(HttpServletRequest request) {
 
-        return request.getParameter(MagicLinkAuthenticatorConstants.USER_NAME);
+        return request.getParameter(MagicLinkAuthenticatorConstants.USERNAME);
     }
 
     private boolean canResolveUserFromIdfAuthenticationResponse(HttpServletRequest request,
@@ -430,7 +436,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
      * @param context  The authentication context.
      * @throws AuthenticationFailedException In occasions of failing.
      */
-    private void setResolvedUserInContext(HttpServletRequest request, AuthenticationContext context)
+    private User resolveUser(HttpServletRequest request, AuthenticationContext context)
             throws AuthenticationFailedException {
 
         String username = getIdentifierFromRequest(request);
@@ -440,47 +446,44 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             username = validatedEmailUsername.get();
         }
 
-        String userId = null;
+        User user = new User();
         String tenantAwareUsername = MultitenantUtils.getTenantAwareUsername(username);
         String tenantDomain = MultitenantUtils.getTenantDomain(username);
+
+        Optional<User> multiAttributeLoginUser = UserResolver.resolveUserFromMultiAttributeLogin(context,
+                username, tenantDomain);
+        if (multiAttributeLoginUser.isPresent()) {
+            user = multiAttributeLoginUser.get();
+        }
+
+        Optional<User> orgUser = UserResolver.resolveUserFromOrganizationHierarchy(context, tenantAwareUsername,
+                username, tenantDomain);
+        if (orgUser.isPresent()) {
+            user = orgUser.get();
+        }
+
+        if (StringUtils.isBlank(user.getUserID())) {
+            Optional<User> userStoreUser = UserResolver.resolveUserFromUserStore(tenantAwareUsername,
+                    username, tenantDomain);
+            if (userStoreUser.isPresent()) {
+                user = userStoreUser.get();
+            }
+        }
+        return user;
+    }
+
+    private void setResolvedUserInContext(AuthenticationContext context, User user) {
         Map<String, Object> authProperties = context.getProperties();
         if (MapUtils.isEmpty(authProperties)) {
             authProperties = new HashMap<>();
             context.setProperties(authProperties);
         }
 
-        Optional<User> multiAttributeLoginUser = UserResolver.resolveUserFromMultiAttributeLogin(context, username);
-        if (multiAttributeLoginUser.isPresent()) {
-            User user = multiAttributeLoginUser.get();
-            tenantAwareUsername = user.getUsername();
-            username = UserCoreUtil.addTenantDomainToEntry(user.getUsername(), context.getTenantDomain());
-            userId = user.getUserID();
-        }
-
-        Optional<User> orgUser = UserResolver.resolveUserFromOrganizationHierarchy(context, tenantAwareUsername,
-                username);
-        if (orgUser.isPresent()) {
-            User user = orgUser.get();
-            tenantAwareUsername = user.getUsername();
-            username = UserCoreUtil.addTenantDomainToEntry(tenantAwareUsername, user.getTenantDomain());
-            userId = user.getUserID();
-        }
-
-        if (StringUtils.isBlank(userId)) {
-            Optional<User> userStoreUser = UserResolver.resolveUserFromUserStore(tenantDomain, tenantAwareUsername,
-                    username);
-            if (userStoreUser.isPresent()) {
-                User user = userStoreUser.get();
-                userId = user.getUserID();
-            }
-        }
-
-        validateUsername(userId, username);
-
-        username = FrameworkUtils.prependUserStoreDomainToName(username);
-        authProperties.put(MagicLinkAuthenticatorConstants.USER_NAME, username);
+        String username = FrameworkUtils.prependUserStoreDomainToName(user.getUsername());
+        authProperties.put(MagicLinkAuthenticatorConstants.USERNAME, username);
         addUsernameToContext(context, username);
-        setSubjectInContextWithUserId(context, userId, tenantAwareUsername, username, tenantDomain);
+        user.setUsername(username);
+        setSubjectInContextWithUserId(context, user);
     }
 
     private Optional<String> validateEmailUsername(String identifierFromRequest, AuthenticationContext context)
@@ -504,43 +507,14 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         context.addAuthenticatorParams(contextParams);
     }
 
-    private void setSubjectInContextWithUserId(AuthenticationContext context, String userId, String tenantAwareUsername,
-                                     String username, String tenantDomain) {
+    private void setSubjectInContextWithUserId(AuthenticationContext context, User user) {
 
-        AuthenticatedUser user = new AuthenticatedUser();
-        user.setUserId(userId);
-        user.setUserName(tenantAwareUsername);
-        user.setUserStoreDomain(UserCoreUtil.extractDomainFromName(username));
-        user.setTenantDomain(tenantDomain);
-        context.setSubject(user);
-    }
-
-    private void validateUsername(String userId, String username)
-            throws AuthenticationFailedException {
-
-        if (getAuthenticatorConfig().getParameterMap() == null) {
-            return;
-        }
-        String validateUsername = getAuthenticatorConfig().getParameterMap()
-                .get(MagicLinkAuthenticatorConstants.VALIDATE_USERNAME);
-        if (!Boolean.parseBoolean(validateUsername)) {
-            return;
-        }
-        if (StringUtils.isBlank(userId)) {
-            if (log.isDebugEnabled()) {
-                log.debug("User does not exists");
-            }
-            if (IdentityUtil.threadLocalProperties.get()
-                    .get(MagicLinkAuthenticatorConstants.RE_CAPTCHA_USER_DOMAIN) != null) {
-                username = IdentityUtil.addDomainToName(username, IdentityUtil.threadLocalProperties.get()
-                                .get(MagicLinkAuthenticatorConstants.RE_CAPTCHA_USER_DOMAIN).toString());
-            }
-            IdentityUtil.threadLocalProperties.get().remove(MagicLinkAuthenticatorConstants.RE_CAPTCHA_USER_DOMAIN);
-            throw new InvalidCredentialsException(
-                    MagicLinkAuthErrorConstants.ErrorMessages.USER_DOES_NOT_EXISTS.getCode(),
-                    MagicLinkAuthErrorConstants.ErrorMessages.USER_DOES_NOT_EXISTS.getMessage(),
-                    org.wso2.carbon.identity.application.common.model.User.getUserFromUserName(username));
-        }
+        AuthenticatedUser authenticatedUser = new AuthenticatedUser();
+        authenticatedUser.setUserId(user.getUserID());
+        authenticatedUser.setUserName(user.getUsername());
+        authenticatedUser.setUserStoreDomain(user.getUserStoreDomain());
+        authenticatedUser.setTenantDomain(user.getTenantDomain());
+        context.setSubject(authenticatedUser);
     }
 
     private void setSubjectInContextWithoutUserId(AuthenticationContext context, String identifierFromRequest) {

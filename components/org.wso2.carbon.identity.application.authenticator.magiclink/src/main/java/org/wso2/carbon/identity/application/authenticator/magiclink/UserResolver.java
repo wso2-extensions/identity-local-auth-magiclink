@@ -1,3 +1,20 @@
+/*
+ * Copyright (c) 2022, WSO2 LLC. (http://www.wso2.org) All Rights Reserved.
+ *
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package org.wso2.carbon.identity.application.authenticator.magiclink;
 
 import org.apache.commons.lang.StringUtils;
@@ -15,6 +32,7 @@ import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.common.User;
 import org.wso2.carbon.user.core.tenant.Tenant;
+import org.wso2.carbon.user.core.util.UserCoreUtil;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
@@ -34,28 +52,50 @@ import java.util.Optional;
  */
 public class UserResolver {
 
-    public static Optional<User> resolveUserFromMultiAttributeLogin(AuthenticationContext context, String username)
+    /**
+     * This method resolves the user if multi-attribute login is enabled.
+     *
+     * @param context  The authentication context.
+     * @param username The username.
+     * @throws InvalidCredentialsException If user cannot be resolved.
+     */
+    public static Optional<User> resolveUserFromMultiAttributeLogin(AuthenticationContext context,
+                                                                    String username, String tenantDomain)
             throws InvalidCredentialsException {
 
-        if (MagicLinkServiceDataHolder.getInstance().getMultiAttributeLoginService()
+        if (!MagicLinkServiceDataHolder.getInstance().getMultiAttributeLoginService()
                 .isEnabled(context.getTenantDomain())) {
-            ResolvedUserResult resolvedUserResult = MagicLinkServiceDataHolder.getInstance()
-                    .getMultiAttributeLoginService()
-                    .resolveUser(MultitenantUtils.getTenantAwareUsername(username), context.getTenantDomain());
-            if (resolvedUserResult != null && ResolvedUserResult.UserResolvedStatus.SUCCESS.
-                    equals(resolvedUserResult.getResolvedStatus())) {
-                return Optional.of(resolvedUserResult.getUser());
-            }
-            throw new InvalidCredentialsException(
-                    MagicLinkAuthErrorConstants.ErrorMessages.USER_DOES_NOT_EXISTS.getCode(),
-                    MagicLinkAuthErrorConstants.ErrorMessages.USER_DOES_NOT_EXISTS.getMessage(),
-                    org.wso2.carbon.identity.application.common.model.User.getUserFromUserName(username));
+            return Optional.empty();
         }
-        return Optional.empty();
+        ResolvedUserResult resolvedUserResult = MagicLinkServiceDataHolder.getInstance()
+                .getMultiAttributeLoginService()
+                .resolveUser(MultitenantUtils.getTenantAwareUsername(username), context.getTenantDomain());
+        if (resolvedUserResult != null && ResolvedUserResult.UserResolvedStatus.SUCCESS.
+                equals(resolvedUserResult.getResolvedStatus())) {
+            User user = resolvedUserResult.getUser();
+
+            String tenantAwareUsername = user.getUsername();
+            username = UserCoreUtil.addTenantDomainToEntry(tenantAwareUsername, context.getTenantDomain());
+            setUserParams(user, tenantAwareUsername, username, tenantDomain);
+            return Optional.of(user);
+        }
+        throw new InvalidCredentialsException(
+                MagicLinkAuthErrorConstants.ErrorMessages.USER_DOES_NOT_EXISTS.getCode(),
+                MagicLinkAuthErrorConstants.ErrorMessages.USER_DOES_NOT_EXISTS.getMessage(),
+                org.wso2.carbon.identity.application.common.model.User.getUserFromUserName(username));
     }
 
+    /**
+     * This method resolves the user if it is a B2B flow.
+     *
+     * @param context  The authentication context.
+     * @param tenantAwareUsername  The tenant-aware username.
+     * @param username The username.
+     * @throws AuthenticationFailedException In occasions of failing to resolve user.
+     */
     public static Optional<User> resolveUserFromOrganizationHierarchy(AuthenticationContext context,
-                                                                  String tenantAwareUsername, String username)
+                                                                      String tenantAwareUsername, String username,
+                                                                      String tenantDomain)
             throws AuthenticationFailedException {
 
         if (!canResolveUserFromOrganizationHierarchy(context)) {
@@ -73,6 +113,10 @@ public class UserResolver {
                                 tenant.getAssociatedOrganizationUUID())
                         .orElseThrow(() -> new AuthenticationFailedException(
                                 MagicLinkAuthErrorConstants.ErrorMessages.USER_NOT_IDENTIFIED_IN_HIERARCHY.getCode()));
+
+                tenantAwareUsername = user.getUsername();
+                username = UserCoreUtil.addTenantDomainToEntry(tenantAwareUsername, user.getTenantDomain());
+                setUserParams(user, tenantAwareUsername, username, tenantDomain);
                 return Optional.of(user);
             }
         } catch (OrganizationManagementException e) {
@@ -99,8 +143,16 @@ public class UserResolver {
                 !MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equalsIgnoreCase(requestTenantDomain);
     }
 
-    public static Optional<User> resolveUserFromUserStore(String tenantDomain,
-                                                          String tenantAwareUsername, String username)
+    /**
+     * This method resolves the user from user store.
+     *
+     * @param tenantDomain  The tenant domain.
+     * @param tenantAwareUsername  The tenant-aware username.
+     * @param username The username.
+     * @throws AuthenticationFailedException In occasions of failing to resolve user.
+     */
+    public static Optional<User> resolveUserFromUserStore(String tenantAwareUsername, String username,
+                                                          String tenantDomain)
             throws AuthenticationFailedException {
 
         AbstractUserStoreManager userStoreManager;
@@ -114,7 +166,8 @@ public class UserResolver {
                 userStoreManager = (AbstractUserStoreManager) userRealm.getUserStoreManager();
                 String userId = userStoreManager.getUserIDFromUserName(tenantAwareUsername);
                 User user = userStoreManager.getUser(userId, username);
-                return Optional.ofNullable(user);
+                setUserParams(user, tenantAwareUsername, username, tenantDomain);
+                return Optional.of(user);
             }
             throw new AuthenticationFailedException(
                     MagicLinkAuthErrorConstants.ErrorMessages
@@ -133,5 +186,11 @@ public class UserResolver {
                             .getCode(), e.getMessage(),
                     org.wso2.carbon.identity.application.common.model.User.getUserFromUserName(username), e);
         }
+    }
+
+    private static void setUserParams(User user, String tenantAwareUsername, String username, String tenantDomain) {
+        user.setUsername(tenantAwareUsername);
+        user.setUserStoreDomain(UserCoreUtil.extractDomainFromName(username));
+        user.setTenantDomain(tenantDomain);
     }
 }
