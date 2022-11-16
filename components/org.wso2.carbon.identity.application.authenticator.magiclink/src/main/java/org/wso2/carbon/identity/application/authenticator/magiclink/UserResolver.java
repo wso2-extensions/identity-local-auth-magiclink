@@ -191,6 +191,7 @@ public class UserResolver {
     private static void setUserParams(User user, String tenantAwareUsername, String username, String tenantDomain) {
         user.setUsername(tenantAwareUsername);
         user.setUserStoreDomain(UserCoreUtil.extractDomainFromName(username));
+        user.setPreferredUsername(username);
         user.setTenantDomain(tenantDomain);
     }
 }

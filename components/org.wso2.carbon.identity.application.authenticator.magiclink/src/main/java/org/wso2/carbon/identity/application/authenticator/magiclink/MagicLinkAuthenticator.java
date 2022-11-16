@@ -479,10 +479,9 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             context.setProperties(authProperties);
         }
 
-        String username = FrameworkUtils.prependUserStoreDomainToName(user.getUsername());
+        String username = FrameworkUtils.prependUserStoreDomainToName(user.getPreferredUsername());
         authProperties.put(MagicLinkAuthenticatorConstants.USERNAME, username);
         addUsernameToContext(context, username);
-        user.setUsername(username);
         setSubjectInContextWithUserId(context, user);
     }
 
