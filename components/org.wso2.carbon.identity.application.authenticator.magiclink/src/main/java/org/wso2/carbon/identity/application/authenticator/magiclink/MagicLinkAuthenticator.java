@@ -456,12 +456,6 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             user = multiAttributeLoginUser.get();
         }
 
-        Optional<User> orgUser = UserResolver.resolveUserFromOrganizationHierarchy(context, tenantAwareUsername,
-                username, tenantDomain);
-        if (orgUser.isPresent()) {
-            user = orgUser.get();
-        }
-
         if (StringUtils.isBlank(user.getUserID())) {
             Optional<User> userStoreUser = UserResolver.resolveUserFromUserStore(tenantAwareUsername,
                     username, tenantDomain);
@@ -479,7 +473,8 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             context.setProperties(authProperties);
         }
 
-        String username = FrameworkUtils.prependUserStoreDomainToName(user.getPreferredUsername());
+        String username = UserCoreUtil.addTenantDomainToEntry(user.getUsername(), context.getTenantDomain());
+        username = FrameworkUtils.prependUserStoreDomainToName(username);
         authProperties.put(MagicLinkAuthenticatorConstants.USER_NAME, username);
         addUsernameToContext(context, username);
         setSubjectInContextWithUserId(context, user);
