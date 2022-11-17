@@ -40,11 +40,14 @@ public abstract class MagicLinkAuthenticatorConstants {
     public static final String IDF_HANDLER_NAME = "IdentifierExecutor";
     public static final String LOCAL = "LOCAL";
     public static final String USER_NAME = "username";
+
     // Default expiry time in seconds.
     public static final long DEFAULT_EXPIRY_TIME = 300;
     public static final int TOKEN_LENGTH = 32;
     public static final String SKIP_IDENTIFIER_PRE_PROCESS = "skipIdentifierPreProcess";
-    public static final String RE_CAPTCHA_USER_DOMAIN = "user-domain-recaptcha";
-    public static final String VALIDATE_USERNAME = "ValidateUsername";
+    public static final String MAGIC_TOKEN = "magicToken";
+    public static final String TEMPLATE_TYPE = "TEMPLATE_TYPE";
+    public static final String EVENT_NAME = "magicLink";
+    public static final String EXPIRYTIME = "expiryTime";
 }
 

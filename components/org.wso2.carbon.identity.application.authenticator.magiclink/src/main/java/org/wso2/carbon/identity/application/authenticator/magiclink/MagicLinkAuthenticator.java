@@ -73,7 +73,7 @@ import static org.wso2.carbon.identity.application.authentication.framework.util
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.BLOCKED_USERSTORE_DOMAINS_LIST;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.BLOCKED_USERSTORE_DOMAINS_SEPARATOR;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.DEFAULT_EXPIRY_TIME;
-import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.EXPIRYTIME;
+import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.EXPIRY_TIME;
 
 /**
  * Authenticator of MagicLink.
@@ -139,7 +139,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             } catch (IOException e) {
                 org.wso2.carbon.identity.application.common.model.User user =
                         org.wso2.carbon.identity.application.common.model.User
-                                .getUserFromUserName(request.getParameter(MagicLinkAuthenticatorConstants.USERNAME));
+                                .getUserFromUserName(request.getParameter(MagicLinkAuthenticatorConstants.USER_NAME));
                 throw new AuthenticationFailedException(
                         MagicLinkAuthErrorConstants.ErrorMessages.SYSTEM_ERROR_WHILE_AUTHENTICATING.getCode(),
                         e.getMessage(), user, e);
@@ -241,7 +241,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             if (log.isDebugEnabled()) {
                 log.debug("Magic link authenticator is handling identifier first flow ");
             }
-            String userName = httpServletRequest.getParameter(MagicLinkAuthenticatorConstants.USERNAME);
+            String userName = httpServletRequest.getParameter(MagicLinkAuthenticatorConstants.USER_NAME);
             String restart = httpServletRequest.getParameter(RESTART_FLOW);
 
             return userName != null || restart != null;
@@ -298,7 +298,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         properties.put(MagicLinkAuthenticatorConstants.MAGIC_TOKEN, magicToken);
         properties.put(MagicLinkAuthenticatorConstants.TEMPLATE_TYPE, MagicLinkAuthenticatorConstants.EVENT_NAME);
         properties.put(IdentityEventConstants.EventProperty.APPLICATION_NAME, applicationName);
-        properties.put(MagicLinkAuthenticatorConstants.EXPIRY_TIME, expiryTime);
+        properties.put(MagicLinkAuthenticatorConstants.EXPIRYTIME, expiryTime);
         Event identityMgtEvent = new Event(eventName, properties);
         try {
             MagicLinkServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
@@ -324,8 +324,8 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
 
     private long getExpiryTime() {
 
-        if (StringUtils.isNotBlank(getAuthenticatorConfig().getParameterMap().get(EXPIRYTIME))) {
-            return Long.parseLong(getAuthenticatorConfig().getParameterMap().get(EXPIRYTIME));
+        if (StringUtils.isNotBlank(getAuthenticatorConfig().getParameterMap().get(EXPIRY_TIME))) {
+            return Long.parseLong(getAuthenticatorConfig().getParameterMap().get(EXPIRY_TIME));
         }
         return DEFAULT_EXPIRY_TIME;
     }
@@ -408,7 +408,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
 
     private String getIdentifierFromRequest(HttpServletRequest request) {
 
-        return request.getParameter(MagicLinkAuthenticatorConstants.USERNAME);
+        return request.getParameter(MagicLinkAuthenticatorConstants.USER_NAME);
     }
 
     private boolean canResolveUserFromIdfAuthenticationResponse(HttpServletRequest request,
@@ -480,7 +480,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         }
 
         String username = FrameworkUtils.prependUserStoreDomainToName(user.getPreferredUsername());
-        authProperties.put(MagicLinkAuthenticatorConstants.USERNAME, username);
+        authProperties.put(MagicLinkAuthenticatorConstants.USER_NAME, username);
         addUsernameToContext(context, username);
         setSubjectInContextWithUserId(context, user);
     }
