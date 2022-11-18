@@ -85,18 +85,6 @@
             <artifactId>org.jacoco.agent</artifactId>
             <classifier>runtime</classifier>
         </dependency>
-        <dependency>
-            <groupId>org.wso2.carbon.identity.framework</groupId>
-            <artifactId>org.wso2.carbon.identity.multi.attribute.login.mgt</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.wso2.carbon.identity.organization.management.core</groupId>
-            <artifactId>org.wso2.carbon.identity.organization.management.service</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.wso2.carbon.identity.framework</groupId>
-            <artifactId>org.wso2.carbon.identity.base</artifactId>
-        </dependency>
     </dependencies>
     <build>
         <plugins>
@@ -122,15 +110,10 @@
                             version="${carbon.identity.framework.imp.pkg.version.range}",
                             org.wso2.carbon.identity.event.*;
                             version="${carbon.identity.framework.imp.pkg.version.range}",
-                            org.wso2.carbon.identity.base;version="${carbon.identity.framework.imp.pkg.version.range}",
                             org.wso2.carbon.identity.governance; version="${identity.governance.imp.pkg.version.range}",
-                            org.wso2.carbon.utils.multitenancy; version="${carbon.kernel.imp.pkg.version.range}",
                             org.wso2.carbon.user.core.service; version="${carbon.kernel.package.import.version.range}",
                             org.wso2.carbon.user.api; version="${carbon.user.api.imp.pkg.version.range}",
                             org.wso2.carbon.user.core.*; version="${carbon.kernel.package.import.version.range}",
-                            org.wso2.carbon.identity.multi.attribute.login.mgt.*; version="${carbon.identity.framework.imp.pkg.version.range}",
-                            org.wso2.carbon.identity.organization.management.service;version="${org.wso2.carbon.identity.organization.management.core.version.range}",
-                            org.wso2.carbon.identity.organization.management.service.exception;version="${org.wso2.carbon.identity.organization.management.core.version.range}",
                         </Import-Package>
                         <Private-Package>
                             org.wso2.carbon.identity.application.authenticator.magiclink.internal,
@@ -209,5 +192,4 @@
         </plugins>
     </build>
 </project>
-
 

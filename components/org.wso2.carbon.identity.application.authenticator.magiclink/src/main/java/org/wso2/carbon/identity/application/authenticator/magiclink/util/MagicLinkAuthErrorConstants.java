@@ -1,5 +1,25 @@
+/*
+ * Copyright (c) 2022, WSO2 LLC. (http://www.wso2.org) All Rights Reserved.
+ *
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package org.wso2.carbon.identity.application.authenticator.magiclink.util;
 
+/**
+ * Authentication error constants of MagicLink Authenticator.
+ */
 public class MagicLinkAuthErrorConstants {
 
     /**
@@ -13,24 +33,8 @@ public class MagicLinkAuthErrorConstants {
         EMPTY_USERNAME("BAS-60002", "Username is empty."),
 
         // IO related Error codes
-        SYSTEM_ERROR_WHILE_AUTHENTICATING("BAS-65001", "System error while authenticating"),
+        SYSTEM_ERROR_WHILE_AUTHENTICATING("BAS-65001", "System error while authenticating");
 
-        // Tenant related Error codes.
-        INVALID_TENANT_ID_OF_THE_USER("BAS-65011",
-                "Failed while trying to get the tenant ID of the user %s"),
-        CANNOT_FIND_THE_USER_REALM_FOR_THE_GIVEN_TENANT("BAS-65012",
-                "Cannot find the user realm for the given tenant: %s"),
-        // UserStore related Exceptions.
-        USER_STORE_EXCEPTION_WHILE_TRYING_TO_AUTHENTICATE("BAS-65021",
-                "UserStoreException while trying to authenticate"),
-        // Organization management exception while resolving user's resident org.
-        ORGANIZATION_MGT_EXCEPTION_WHILE_TRYING_TO_RESOLVE_RESIDENT_ORG("BAS-65022",
-                "Organization mgt exception while authenticating"),
-        // UserStore Error codes.
-        USER_DOES_NOT_EXISTS("17001", "User does not exists"),
-
-        // User identification failure in organization hierarchy.
-        USER_NOT_IDENTIFIED_IN_HIERARCHY("17003", "User is not identified");
         private final String code;
         private final String message;
 

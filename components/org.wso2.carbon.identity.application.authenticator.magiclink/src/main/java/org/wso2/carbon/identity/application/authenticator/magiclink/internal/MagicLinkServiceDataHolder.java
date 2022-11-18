@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2021, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2021, WSO2 LLC. (http://www.wso2.org) All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,8 +19,6 @@ package org.wso2.carbon.identity.application.authenticator.magiclink.internal;
 
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
-import org.wso2.carbon.identity.multi.attribute.login.mgt.MultiAttributeLoginService;
-import org.wso2.carbon.identity.organization.management.service.OrganizationUserResidentResolverService;
 import org.wso2.carbon.user.core.service.RealmService;
 
 /**
@@ -33,8 +31,6 @@ public class MagicLinkServiceDataHolder {
     private IdentityEventService identityEventService;
     private RealmService realmService;
     private IdentityGovernanceService identityGovernanceService;
-    private MultiAttributeLoginService multiAttributeLoginService;
-    private OrganizationUserResidentResolverService organizationUserResidentResolverService;
 
     private MagicLinkServiceDataHolder() {
 
@@ -66,47 +62,6 @@ public class MagicLinkServiceDataHolder {
     }
 
     /**
-     * Get MultiAttribute Login Service.
-     *
-     * @return MultiAttribute Login Service.
-     */
-    public MultiAttributeLoginService getMultiAttributeLoginService() {
-
-        return multiAttributeLoginService;
-    }
-
-    /**
-     * Set MultiAttribute Login Service.
-     *
-     * @param multiAttributeLoginService MultiAttribute Login Service.
-     */
-    public void setMultiAttributeLoginService(MultiAttributeLoginService multiAttributeLoginService) {
-
-        this.multiAttributeLoginService = multiAttributeLoginService;
-    }
-
-    /**
-     * Get Organization User Resident Resolver Service.
-     *
-     * @return Organization User Resident Resolver Service.
-     */
-    public OrganizationUserResidentResolverService getOrganizationUserResidentResolverService() {
-
-        return organizationUserResidentResolverService;
-    }
-
-    /**
-     * Set Organization User Resident Resolver Service.
-     *
-     * @param organizationUserResidentResolverService Organization User Resident Resolver Service.
-     */
-    public void setOrganizationUserResidentResolverService
-            (OrganizationUserResidentResolverService organizationUserResidentResolverService) {
-
-        this.organizationUserResidentResolverService = organizationUserResidentResolverService;
-    }
-
-    /**
      * Get Identity Governance Service.
      *
      * @return Identity Governance Service.
@@ -126,4 +81,3 @@ public class MagicLinkServiceDataHolder {
         this.identityGovernanceService = identityGovernanceService;
     }
 }
-

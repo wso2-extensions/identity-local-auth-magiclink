@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2021, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2021, WSO2 LLC. (http://www.wso2.org) All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -30,8 +30,6 @@ import org.wso2.carbon.identity.application.authentication.framework.Application
 import org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticator;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
-import org.wso2.carbon.identity.multi.attribute.login.mgt.MultiAttributeLoginService;
-import org.wso2.carbon.identity.organization.management.service.OrganizationUserResidentResolverService;
 import org.wso2.carbon.user.core.service.RealmService;
 
 /**
@@ -115,47 +113,4 @@ public class MagicLinkAuthenticatorServiceComponent {
 
         MagicLinkServiceDataHolder.getInstance().setIdentityEventService(null);
     }
-
-    @Reference(
-            name = "MultiAttributeLoginService",
-            service = MultiAttributeLoginService.class,
-            cardinality = ReferenceCardinality.MANDATORY,
-            policy = ReferencePolicy.DYNAMIC,
-            unbind = "unsetMultiAttributeLoginService")
-    protected void setMultiAttributeLoginService(MultiAttributeLoginService multiAttributeLogin) {
-
-        MagicLinkServiceDataHolder.getInstance().setMultiAttributeLoginService(multiAttributeLogin);
-    }
-
-    protected void unsetMultiAttributeLoginService(MultiAttributeLoginService multiAttributeLogin) {
-
-        MagicLinkServiceDataHolder.getInstance().setMultiAttributeLoginService(null);
-
-    }
-
-    @Reference(
-            name = "organization.user.resident.resolver.service",
-            service = OrganizationUserResidentResolverService.class,
-            cardinality = ReferenceCardinality.MANDATORY,
-            policy = ReferencePolicy.DYNAMIC,
-            unbind = "unsetOrganizationUserResidentResolverService"
-    )
-    protected void setOrganizationUserResidentResolverService(
-            OrganizationUserResidentResolverService organizationUserResidentResolverService) {
-
-        if (log.isDebugEnabled()) {
-            log.debug("Setting the organization user resident resolver service.");
-        }
-        MagicLinkServiceDataHolder.getInstance().setOrganizationUserResidentResolverService(organizationUserResidentResolverService);
-    }
-
-    protected void unsetOrganizationUserResidentResolverService(
-            OrganizationUserResidentResolverService organizationUserResidentResolverService) {
-
-        if (log.isDebugEnabled()) {
-            log.debug("Unset organization user resident resolver service.");
-        }
-        MagicLinkServiceDataHolder.getInstance().setOrganizationUserResidentResolverService(null);
-    }
-
 }
