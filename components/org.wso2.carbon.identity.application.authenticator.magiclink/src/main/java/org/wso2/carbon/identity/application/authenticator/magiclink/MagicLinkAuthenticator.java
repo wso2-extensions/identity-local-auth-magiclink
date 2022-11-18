@@ -59,7 +59,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.HttpServletRequest;
@@ -88,7 +87,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                                            HttpServletResponse response, AuthenticationContext context)
             throws AuthenticationFailedException, LogoutFailedException {
 
-        if (!isIdentifierFirstRequest(request)) {
+        if (!isIdentifierFirstRequest(request) || !isIdentifierFirstRequestInitiatedFromMagicLink(context)) {
             return super.process(request, response, context);
         }
         if (context.isLogoutRequest()) {
@@ -97,12 +96,10 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         if (getName().equals(context.getProperty(FrameworkConstants.LAST_FAILED_AUTHENTICATOR))) {
             context.setRetrying(true);
         }
-        if (canResolveUserFromIdfAuthenticationResponse(request, context)) {
-            User user = resolveUser(request, context);
-            setResolvedUserInContext(context, user);
-        } else {
-            setUnresolvedUserInContext(request, context);
-        }
+        validateIdentifierFromRequest(request);
+        User user = resolveUser(request, context);
+        setResolvedUserInContext(context, user);
+        context.setProperty(MagicLinkAuthenticatorConstants.IS_IDF_INITIATED_FROM_MAGIC_LINK_AUTH, false);
         initiateAuthenticationRequest(request, response, context);
         context.setCurrentAuthenticator(getName());
         context.setRetrying(false);
@@ -411,8 +408,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         return request.getParameter(MagicLinkAuthenticatorConstants.USER_NAME);
     }
 
-    private boolean canResolveUserFromIdfAuthenticationResponse(HttpServletRequest request,
-                                                                AuthenticationContext context)
+    private void validateIdentifierFromRequest(HttpServletRequest request)
             throws AuthenticationFailedException {
 
         String identifierFromRequest = getIdentifierFromRequest(request);
@@ -420,13 +416,6 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             throw new InvalidCredentialsException(MagicLinkAuthErrorConstants.ErrorMessages.EMPTY_USERNAME.getCode(),
                     MagicLinkAuthErrorConstants.ErrorMessages.EMPTY_USERNAME.getMessage());
         }
-        Map<String, String> runtimeParams = getRuntimeParams(context);
-        if (MapUtils.isNotEmpty(runtimeParams)) {
-            String skipPreProcessUsername = runtimeParams
-                    .get(MagicLinkAuthenticatorConstants.SKIP_IDENTIFIER_PRE_PROCESS);
-            return !Boolean.parseBoolean(skipPreProcessUsername);
-        }
-        return true;
     }
 
     /**
@@ -441,28 +430,16 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
 
         String username = getIdentifierFromRequest(request);
 
-        Optional<String> validatedEmailUsername = validateEmailUsername(username, context);
-        if (validatedEmailUsername.isPresent()) {
-            username = validatedEmailUsername.get();
-        }
+        validateEmailUsername(username, context);
 
+        username = FrameworkUtils.preprocessUsername(username, context);
         User user = new User();
         String tenantAwareUsername = MultitenantUtils.getTenantAwareUsername(username);
         String tenantDomain = MultitenantUtils.getTenantDomain(username);
 
-        Optional<User> multiAttributeLoginUser = UserResolver.resolveUserFromMultiAttributeLogin(context,
-                username, tenantDomain);
-        if (multiAttributeLoginUser.isPresent()) {
-            user = multiAttributeLoginUser.get();
-        }
-
-        if (StringUtils.isBlank(user.getUserID())) {
-            Optional<User> userStoreUser = UserResolver.resolveUserFromUserStore(tenantAwareUsername,
-                    username, tenantDomain);
-            if (userStoreUser.isPresent()) {
-                user = userStoreUser.get();
-            }
-        }
+        user.setUsername(tenantAwareUsername);
+        user.setUserStoreDomain(UserCoreUtil.extractDomainFromName(username));
+        user.setTenantDomain(tenantDomain);
         return user;
     }
 
@@ -473,21 +450,19 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             context.setProperties(authProperties);
         }
 
-        String username = UserCoreUtil.addTenantDomainToEntry(user.getUsername(), context.getTenantDomain());
+        String username = UserCoreUtil.addTenantDomainToEntry(user.getUsername(), user.getTenantDomain());
         username = FrameworkUtils.prependUserStoreDomainToName(username);
         authProperties.put(MagicLinkAuthenticatorConstants.USER_NAME, username);
         addUsernameToContext(context, username);
-        setSubjectInContextWithUserId(context, user);
+        setSubjectInContext(context, user);
     }
 
-    private Optional<String> validateEmailUsername(String identifierFromRequest, AuthenticationContext context)
+    private void validateEmailUsername(String identifierFromRequest, AuthenticationContext context)
             throws InvalidCredentialsException {
 
         if (!IdentityUtil.isEmailUsernameValidationDisabled()) {
             FrameworkUtils.validateUsername(identifierFromRequest, context);
-            return Optional.ofNullable(FrameworkUtils.preprocessUsername(identifierFromRequest, context));
         }
-        return Optional.empty();
     }
 
     private void addUsernameToContext(AuthenticationContext context, String username) {
@@ -501,7 +476,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         context.addAuthenticatorParams(contextParams);
     }
 
-    private void setSubjectInContextWithUserId(AuthenticationContext context, User user) {
+    private void setSubjectInContext(AuthenticationContext context, User user) {
 
         AuthenticatedUser authenticatedUser = new AuthenticatedUser();
         authenticatedUser.setUserId(user.getUserID());
@@ -509,20 +484,6 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         authenticatedUser.setUserStoreDomain(user.getUserStoreDomain());
         authenticatedUser.setTenantDomain(user.getTenantDomain());
         context.setSubject(authenticatedUser);
-    }
-
-    private void setSubjectInContextWithoutUserId(AuthenticationContext context, String identifierFromRequest) {
-
-        AuthenticatedUser user = new AuthenticatedUser();
-        user.setUserName(identifierFromRequest);
-        context.setSubject(user);
-    }
-
-    private void setUnresolvedUserInContext(HttpServletRequest request, AuthenticationContext context) {
-
-        String identifierFromRequest = getIdentifierFromRequest(request);
-        addUsernameToContext(context, identifierFromRequest);
-        setSubjectInContextWithoutUserId(context, identifierFromRequest);
     }
 
     /**
@@ -535,5 +496,11 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
 
         String authType = request.getParameter(AUTH_TYPE);
         return IDF.equals(authType);
+    }
+
+    private boolean isIdentifierFirstRequestInitiatedFromMagicLink(AuthenticationContext context) {
+
+        return Boolean.TRUE.equals(
+                context.getProperty(MagicLinkAuthenticatorConstants.IS_IDF_INITIATED_FROM_MAGIC_LINK_AUTH));
     }
 }
