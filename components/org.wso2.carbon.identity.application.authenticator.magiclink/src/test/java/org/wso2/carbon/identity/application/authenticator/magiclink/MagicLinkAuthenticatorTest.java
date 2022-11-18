@@ -18,6 +18,7 @@
 package org.wso2.carbon.identity.application.authenticator.magiclink;
 
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.stubbing.Answer;
 import org.powermock.api.mockito.PowerMockito;
@@ -30,10 +31,13 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.ObjectFactory;
 import org.testng.annotations.Test;
+import org.wso2.carbon.identity.application.authentication.framework.AuthenticatorFlowStatus;
+import org.wso2.carbon.identity.application.authentication.framework.config.ConfigurationFacade;
 import org.wso2.carbon.identity.application.authentication.framework.context.AuthenticationContext;
 import org.wso2.carbon.identity.application.authentication.framework.exception.AuthenticationFailedException;
 import org.wso2.carbon.identity.application.authentication.framework.exception.InvalidCredentialsException;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
+import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.application.authenticator.magiclink.cache.MagicLinkAuthContextCache;
 import org.wso2.carbon.identity.application.authenticator.magiclink.cache.MagicLinkAuthContextCacheEntry;
 import org.wso2.carbon.identity.application.authenticator.magiclink.cache.MagicLinkAuthContextCacheKey;
@@ -48,6 +52,8 @@ import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.common.User;
 import org.wso2.carbon.user.core.service.RealmService;
+import org.wso2.carbon.user.core.util.UserCoreUtil;
+import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -69,9 +75,12 @@ import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertThrows;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.USERNAME_CLAIM;
+import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.RequestParams.AUTH_TYPE;
+import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.RequestParams.IDF;
 
 @PrepareForTest({ TokenGenerator.class, IdentityUtil.class, ServiceURLBuilder.class, IdentityTenantUtil.class,
-        AbstractUserStoreManager.class, MagicLinkAuthContextCache.class, MagicLinkServiceDataHolder.class })
+        AbstractUserStoreManager.class, MagicLinkAuthContextCache.class, MagicLinkServiceDataHolder.class,
+        ConfigurationFacade.class, FrameworkUtils.class, MultitenantUtils.class, UserCoreUtil.class})
 @PowerMockIgnore({ "javax.net.*", "javax.security.*", "javax.crypto.*", "javax.xml.*" })
 public class MagicLinkAuthenticatorTest {
 
@@ -79,8 +88,11 @@ public class MagicLinkAuthenticatorTest {
     private static final String SUPER_TENANT_DOMAIN = "carbon.super";
     private static final String USERNAME = "admin";
     private static final String INVALID_USERNAME = "paul";
+    private static final String USERNAME_WITH_TENANT_DOMAIN = "admin@carbon.super";
     private static final String DUMMY_MAGIC_TOKEN = "Adafeaf23412vdasdfG6fshs";
     private static final String DEFAULT_SERVER_URL = "http://localhost:9443";
+    private static final String DUMMY_LOGIN_PAGEURL = "dummyLoginPageurl";
+    private static final String DUMMY_QUERY_PARAMS = "dummyQueryParams";
     private MagicLinkAuthenticator magicLinkAuthenticator;
     private String redirect;
 
@@ -108,6 +120,9 @@ public class MagicLinkAuthenticatorTest {
     @Mock
     private MagicLinkAuthContextCache mockMagicLinkAuthContextCache;
 
+    @Mock
+    private ConfigurationFacade mockConfigurationFacade;
+
     @BeforeMethod
     public void setUp() {
 
@@ -116,6 +131,8 @@ public class MagicLinkAuthenticatorTest {
         mockStatic(TokenGenerator.class);
         mockStatic(IdentityUtil.class);
         mockStatic(IdentityTenantUtil.class);
+        mockStatic(FrameworkUtils.class);
+        mockStatic(MultitenantUtils.class);
         mockUserStoreManager = mock(AbstractUserStoreManager.class);
     }
 
@@ -176,10 +193,27 @@ public class MagicLinkAuthenticatorTest {
         };
     }
 
-    @Test(description = "Test case for canHandle() method.", dataProvider = "getCanHandleData")
+    @Test(description = "Test case for canHandle() method magic link flow.", dataProvider = "getCanHandleData")
     public void testCanHandle(String magicToken, boolean canHandle) throws Exception {
 
         when(httpServletRequest.getParameter(MagicLinkAuthenticatorConstants.MAGIC_LINK_TOKEN)).thenReturn(magicToken);
+        Assert.assertEquals(magicLinkAuthenticator.canHandle(httpServletRequest), canHandle);
+    }
+
+    @DataProvider
+    public Object[][] getCanHandleDataIdf() {
+
+        return new Object[][] {
+                { USERNAME, true },
+                { null, false }
+        };
+    }
+
+    @Test(description = "Test case for canHandle() method identifier first flow.", dataProvider = "getCanHandleDataIdf")
+    public void testCanHandleIdfFlow(String username, boolean canHandle) {
+
+        when(httpServletRequest.getParameter(AUTH_TYPE)).thenReturn(IDF);
+        when(httpServletRequest.getParameter(MagicLinkAuthenticatorConstants.USER_NAME)).thenReturn(username);
         Assert.assertEquals(magicLinkAuthenticator.canHandle(httpServletRequest), canHandle);
     }
 
@@ -218,7 +252,7 @@ public class MagicLinkAuthenticatorTest {
     }
 
     @Test(description = "Test case for getContextIdentifier() method.",
-          dataProvider = "getInitiateAuthenticationRequestExceptionData")
+            dataProvider = "getInitiateAuthenticationRequestExceptionData")
     public void testGetContextIdentifier(Object cacheKey, Object cacheEntry, String sessionDataKey) {
 
         when(httpServletRequest.getParameter(MagicLinkAuthenticatorConstants.MAGIC_LINK_TOKEN)).thenReturn(
@@ -292,7 +326,7 @@ public class MagicLinkAuthenticatorTest {
                         context));
     }
 
-    @Test(description = "Test case for initiateAuthenticationRequest() method.")
+    @Test(description = "Test case for initiateAuthenticationRequest() method magic link flow.")
     public void testInitiateAuthenticationRequest() throws Exception {
 
         mockStatic(IdentityUtil.class);
@@ -343,7 +377,7 @@ public class MagicLinkAuthenticatorTest {
         assertEquals(redirect, DEFAULT_SERVER_URL + "/" + MagicLinkAuthenticatorConstants.MAGIC_LINK_NOTIFICATION_PAGE);
     }
 
-    @Test(description = "Test case for initiateAuthenticationRequest() method.")
+    @Test(description = "Test case for initiateAuthenticationRequest() method magic link flow.")
     public void testInitiateAuthenticationRequestWithInvalidUser() throws Exception {
 
         mockStatic(IdentityUtil.class);
@@ -375,7 +409,7 @@ public class MagicLinkAuthenticatorTest {
         assertEquals(redirect, DEFAULT_SERVER_URL + "/" + MagicLinkAuthenticatorConstants.MAGIC_LINK_NOTIFICATION_PAGE);
     }
 
-    @Test(description = "Test case for initiateAuthenticationRequest() method.")
+    @Test(description = "Test case for initiateAuthenticationRequest() method magic link flow.")
     public void testInitiateAuthenticationRequestWithIOException() throws Exception {
 
         mockStatic(IdentityUtil.class);
@@ -396,12 +430,95 @@ public class MagicLinkAuthenticatorTest {
         List<User> userList = new ArrayList<>();
         when(mockRealmService.getTenantUserRealm(anyInt())).thenReturn(mockUserRealm);
         when(mockUserRealm.getUserStoreManager()).thenReturn(mockUserStoreManager);
-        when(mockUserStoreManager.getUserListWithID(USERNAME_CLAIM, INVALID_USERNAME, null)).thenReturn(userList);
+        when(mockUserStoreManager.getUserListWithID(USERNAME_CLAIM, INVALID_USERNAME, null))
+                .thenReturn(userList);
 
         doThrow(new IOException()).when(httpServletResponse).sendRedirect(anyString());
         assertThrows(AuthenticationFailedException.class,
                 () -> magicLinkAuthenticator.initiateAuthenticationRequest(httpServletRequest, httpServletResponse,
                         context));
+    }
+
+    @Test(description = "Test case for initiateAuthenticationRequest() method identifier first flow.")
+    public void testInitiateAuthenticationRequestIdfFlow() throws Exception {
+
+        when(context.getLastAuthenticatedUser()).thenReturn(null);
+        mockStatic(ConfigurationFacade.class);
+        when(ConfigurationFacade.getInstance()).thenReturn(mockConfigurationFacade);
+        when(mockConfigurationFacade.getAuthenticationEndpointURL()).thenReturn(DUMMY_LOGIN_PAGEURL);
+        when(context.getContextIdIncludedQueryParams()).thenReturn(DUMMY_QUERY_PARAMS);
+        doAnswer((Answer<Object>) invocation -> {
+            redirect = (String) invocation.getArguments()[0];
+            return null;
+        }).when(httpServletResponse).sendRedirect(anyString());
+
+        magicLinkAuthenticator.initiateAuthenticationRequest(httpServletRequest, httpServletResponse, context);
+        assertEquals(redirect, DUMMY_LOGIN_PAGEURL + ("?" + DUMMY_QUERY_PARAMS)
+                + MagicLinkAuthenticatorConstants.AUTHENTICATORS +
+                MagicLinkAuthenticatorConstants.IDF_HANDLER_NAME + ":" +
+                MagicLinkAuthenticatorConstants.LOCAL);
+    }
+
+    @Test(description = "Test case for initiateAuthenticationRequest() method identifier first flow.")
+    public void testInitiateAuthenticationRequestIdfFlowWithIOException() throws Exception {
+
+        when(context.getLastAuthenticatedUser()).thenReturn(null);
+        mockStatic(ConfigurationFacade.class);
+        when(ConfigurationFacade.getInstance()).thenReturn(mockConfigurationFacade);
+        when(mockConfigurationFacade.getAuthenticationEndpointURL()).thenReturn(DUMMY_LOGIN_PAGEURL);
+        when(context.getContextIdIncludedQueryParams()).thenReturn(DUMMY_QUERY_PARAMS);
+
+        doThrow(new IOException()).when(httpServletResponse).sendRedirect(anyString());
+        assertThrows(AuthenticationFailedException.class,
+                () -> magicLinkAuthenticator.initiateAuthenticationRequest(httpServletRequest, httpServletResponse,
+                        context));
+    }
+
+    @Test(description = "Test case for process() method identifier first flow")
+    public void testProcess() throws Exception {
+
+        when(httpServletRequest.getParameter(AUTH_TYPE)).thenReturn(IDF);
+        context.setProperty(MagicLinkAuthenticatorConstants.IS_IDF_INITIATED_FROM_MAGIC_LINK_AUTH, true);
+        when(httpServletRequest.getParameter(MagicLinkAuthenticatorConstants.USER_NAME)).thenReturn(USERNAME);
+        when(FrameworkUtils.preprocessUsername(USERNAME, context)).thenReturn(USERNAME_WITH_TENANT_DOMAIN);
+        when(MultitenantUtils.getTenantAwareUsername(USERNAME)).thenReturn(USERNAME);
+        when(MultitenantUtils.getTenantDomain(USERNAME)).thenReturn(SUPER_TENANT_DOMAIN);
+        mockStatic(UserCoreUtil.class);
+        when(UserCoreUtil.addTenantDomainToEntry(USERNAME, SUPER_TENANT_DOMAIN)).thenReturn(USERNAME_WITH_TENANT_DOMAIN);
+        when(FrameworkUtils.prependUserStoreDomainToName(USERNAME)).thenReturn(USERNAME_WITH_TENANT_DOMAIN);
+        context.setTenantDomain(SUPER_TENANT_DOMAIN);
+
+        MagicLinkServiceDataHolder.getInstance().setRealmService(mockRealmService);
+        when(IdentityUtil.getPrimaryDomainName()).thenReturn(USER_STORE_DOMAIN);
+        when(IdentityTenantUtil.getTenantId(SUPER_TENANT_DOMAIN)).thenReturn(-1234);
+        AuthenticatedUser authenticatedUser = AuthenticatedUser.createLocalAuthenticatedUserFromSubjectIdentifier(
+                USERNAME);
+        when(context.getLastAuthenticatedUser()).thenReturn(authenticatedUser);
+        when(TokenGenerator.generateToken(anyInt())).thenReturn(DUMMY_MAGIC_TOKEN);
+        mockStatic(MagicLinkAuthContextCache.class);
+        when(MagicLinkAuthContextCache.getInstance()).thenReturn(mockMagicLinkAuthContextCache);
+
+        MagicLinkAuthContextData magicLinkAuthContextData = new MagicLinkAuthContextData();
+        magicLinkAuthContextData.setMagicToken(DUMMY_MAGIC_TOKEN);
+        User user = new User(UUID.randomUUID().toString(), USERNAME, null);
+
+        MagicLinkAuthContextCacheKey cacheKey = new MagicLinkAuthContextCacheKey(DUMMY_MAGIC_TOKEN);
+        MagicLinkAuthContextCacheEntry cacheEntry = new MagicLinkAuthContextCacheEntry(magicLinkAuthContextData);
+        when(mockMagicLinkAuthContextCache.getValueFromCache(cacheKey)).thenReturn(cacheEntry);
+        MagicLinkServiceDataHolder.getInstance().setIdentityEventService(mockIdentityEventService);
+
+        mockServiceURLBuilder();
+        List<User> userList = new ArrayList<>();
+        userList.add(user);
+        when(mockRealmService.getTenantUserRealm(anyInt())).thenReturn(mockUserRealm);
+        when(mockUserRealm.getUserStoreManager()).thenReturn(mockUserStoreManager);
+        when(mockUserStoreManager.getUserListWithID(USERNAME_CLAIM, USERNAME, null)).thenReturn(userList);
+
+        Mockito.doNothing().when(httpServletResponse).sendRedirect(anyString());
+
+        AuthenticatorFlowStatus status = magicLinkAuthenticator.process(httpServletRequest,
+                httpServletResponse, context);
+        Assert.assertEquals(status, AuthenticatorFlowStatus.INCOMPLETE);
     }
 
     @ObjectFactory
