@@ -85,8 +85,8 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
 
     @Override
     public AuthenticatorFlowStatus process(HttpServletRequest request, HttpServletResponse response,
-                                           AuthenticationContext context)
-            throws AuthenticationFailedException, LogoutFailedException {
+                                           AuthenticationContext context) throws AuthenticationFailedException,
+            LogoutFailedException {
 
         if (!isIdentifierFirstRequest(request) || !isIdentifierFirstRequestInitiatedFromMagicLink(context)) {
             return super.process(request, response, context);
@@ -99,7 +99,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         }
         User user = resolveUser(request, context);
         setResolvedUserInContext(context, user);
-        context.setProperty(MagicLinkAuthenticatorConstants.IS_IDF_INITIATED_FROM_MAGIC_LINK_AUTH, false);
+        context.setProperty(MagicLinkAuthenticatorConstants.IS_IDF_INITIATED_FROM_AUTHENTICATOR, false);
         initiateAuthenticationRequest(request, response, context);
         context.setCurrentAuthenticator(getName());
         context.setRetrying(false);
@@ -119,7 +119,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             AuthenticationContext context) throws AuthenticationFailedException {
 
         if (context.getLastAuthenticatedUser() == null) {
-            context.setProperty(MagicLinkAuthenticatorConstants.IS_IDF_INITIATED_FROM_MAGIC_LINK_AUTH, true);
+            context.setProperty(MagicLinkAuthenticatorConstants.IS_IDF_INITIATED_FROM_AUTHENTICATOR, true);
             String loginPage = ConfigurationFacade.getInstance().getAuthenticationEndpointURL();
             String queryParams = context.getContextIdIncludedQueryParams();
             try {
@@ -408,7 +408,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             throws AuthenticationFailedException {
 
         String identifierFromRequest = request.getParameter(MagicLinkAuthenticatorConstants.USER_NAME);
-        if (!Boolean.parseBoolean(identifierFromRequest)) {
+        if (StringUtils.isBlank(identifierFromRequest)) {
             throw new InvalidCredentialsException(MagicLinkAuthErrorConstants.ErrorMessages.EMPTY_USERNAME.getCode(),
                     MagicLinkAuthErrorConstants.ErrorMessages.EMPTY_USERNAME.getMessage());
         }
@@ -499,6 +499,6 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
     private boolean isIdentifierFirstRequestInitiatedFromMagicLink(AuthenticationContext context) {
 
         return Boolean.TRUE.equals(
-                context.getProperty(MagicLinkAuthenticatorConstants.IS_IDF_INITIATED_FROM_MAGIC_LINK_AUTH));
+                context.getProperty(MagicLinkAuthenticatorConstants.IS_IDF_INITIATED_FROM_AUTHENTICATOR));
     }
 }

@@ -478,7 +478,7 @@ public class MagicLinkAuthenticatorTest {
     public void testProcess() throws Exception {
 
         when(httpServletRequest.getParameter(AUTH_TYPE)).thenReturn(IDF);
-        context.setProperty(MagicLinkAuthenticatorConstants.IS_IDF_INITIATED_FROM_MAGIC_LINK_AUTH, true);
+        context.setProperty(MagicLinkAuthenticatorConstants.IS_IDF_INITIATED_FROM_AUTHENTICATOR, true);
         when(httpServletRequest.getParameter(MagicLinkAuthenticatorConstants.USER_NAME)).thenReturn(USERNAME);
         when(FrameworkUtils.preprocessUsername(USERNAME, context)).thenReturn(USERNAME_WITH_TENANT_DOMAIN);
         when(MultitenantUtils.getTenantAwareUsername(USERNAME)).thenReturn(USERNAME);

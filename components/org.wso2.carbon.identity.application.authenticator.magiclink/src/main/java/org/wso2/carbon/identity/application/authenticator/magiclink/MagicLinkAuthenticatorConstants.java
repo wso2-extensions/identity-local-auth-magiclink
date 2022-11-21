@@ -36,7 +36,7 @@ public abstract class MagicLinkAuthenticatorConstants {
     public static final String BLOCKED_USERSTORE_DOMAINS_LIST = "BlockedUserStoreDomains";
     public static final String BLOCKED_USERSTORE_DOMAINS_SEPARATOR = ",";
     public static final String AUTHENTICATORS = "&authenticators=";
-    public static final String IS_IDF_INITIATED_FROM_MAGIC_LINK_AUTH = "isIdfInitiatedFromMagicLinkAuth";
+    public static final String IS_IDF_INITIATED_FROM_AUTHENTICATOR = "isIdfInitiatedFromAuthenticator";
     public static final String IDF_HANDLER_NAME = "IdentifierExecutor";
     public static final String LOCAL = "LOCAL";
     public static final String USER_NAME = "username";
