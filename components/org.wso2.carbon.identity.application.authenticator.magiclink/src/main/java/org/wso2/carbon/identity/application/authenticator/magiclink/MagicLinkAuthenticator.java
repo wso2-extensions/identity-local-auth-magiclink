@@ -88,7 +88,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                                            AuthenticationContext context) throws AuthenticationFailedException,
             LogoutFailedException {
 
-        if (!isIdentifierFirstRequest(request) || !isIdentifierFirstRequestInitiatedFromMagicLink(context)) {
+        if (!isIdfInitiatedFromMagicLink(context)) {
             return super.process(request, response, context);
         }
         if (context.isLogoutRequest()) {
@@ -496,7 +496,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         return IDF.equals(authType);
     }
 
-    private boolean isIdentifierFirstRequestInitiatedFromMagicLink(AuthenticationContext context) {
+    private boolean isIdfInitiatedFromMagicLink(AuthenticationContext context) {
 
         return Boolean.TRUE.equals(
                 context.getProperty(MagicLinkAuthenticatorConstants.IS_IDF_INITIATED_FROM_AUTHENTICATOR));
