@@ -59,6 +59,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.HttpServletRequest;
@@ -83,8 +84,8 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
     private static final Log log = LogFactory.getLog(MagicLinkAuthenticator.class);
 
     @Override
-    public AuthenticatorFlowStatus process(HttpServletRequest request,
-                                           HttpServletResponse response, AuthenticationContext context)
+    public AuthenticatorFlowStatus process(HttpServletRequest request, HttpServletResponse response,
+                                           AuthenticationContext context)
             throws AuthenticationFailedException, LogoutFailedException {
 
         if (!isIdentifierFirstRequest(request) || !isIdentifierFirstRequestInitiatedFromMagicLink(context)) {
@@ -96,7 +97,6 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         if (getName().equals(context.getProperty(FrameworkConstants.LAST_FAILED_AUTHENTICATOR))) {
             context.setRetrying(true);
         }
-        validateIdentifierFromRequest(request);
         User user = resolveUser(request, context);
         setResolvedUserInContext(context, user);
         context.setProperty(MagicLinkAuthenticatorConstants.IS_IDF_INITIATED_FROM_MAGIC_LINK_AUTH, false);
@@ -142,8 +142,9 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                         e.getMessage(), user, e);
             }
         } else {
-            User user = getUser(context.getLastAuthenticatedUser());
-            if (user != null) {
+            Optional<User> optionalUser = getUser(context.getLastAuthenticatedUser());
+            if (optionalUser.isPresent()) {
+                User user = optionalUser.get();
                 MagicLinkAuthContextData magicLinkAuthContextData = new MagicLinkAuthContextData();
                 String magicToken = TokenGenerator.generateToken(MagicLinkAuthenticatorConstants.TOKEN_LENGTH);
                 magicLinkAuthContextData.setMagicToken(magicToken);
@@ -241,7 +242,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             String userName = httpServletRequest.getParameter(MagicLinkAuthenticatorConstants.USER_NAME);
             String restart = httpServletRequest.getParameter(RESTART_FLOW);
 
-            return userName != null || restart != null;
+            return StringUtils.isNotEmpty(userName) || StringUtils.isNotEmpty(restart);
         }
         return StringUtils.isNotEmpty(
                 httpServletRequest.getParameter(MagicLinkAuthenticatorConstants.MAGIC_LINK_TOKEN));
@@ -327,12 +328,12 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         return DEFAULT_EXPIRY_TIME;
     }
 
-    private User getUser(AuthenticatedUser authenticatedUser) throws AuthenticationFailedException {
+    private Optional<User> getUser(AuthenticatedUser authenticatedUser) throws AuthenticationFailedException {
 
         User user = null;
         String tenantDomain = authenticatedUser.getTenantDomain();
         if (tenantDomain == null) {
-            return null;
+            return Optional.empty();
         }
         int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
         try {
@@ -348,14 +349,14 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                 }
                 userList = getValidUsers(userList);
                 if (CollectionUtils.isEmpty(userList)) {
-                    return null;
+                    return Optional.empty();
                 }
                 if (userList.size() > 1) {
                     if (log.isDebugEnabled()) {
                         log.debug("There are more than one user with the provided username claim value: "
                                 + authenticatedUser.getUserName());
                     }
-                    return null;
+                    return Optional.empty();
                 }
                 user = userList.get(0);
             } else {
@@ -368,7 +369,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             }
             throw new AuthenticationFailedException(msg, e);
         }
-        return user;
+        return Optional.ofNullable(user);
     }
 
     /**
@@ -403,19 +404,15 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         return blockedUserStoreDomainsList;
     }
 
-    private String getIdentifierFromRequest(HttpServletRequest request) {
-
-        return request.getParameter(MagicLinkAuthenticatorConstants.USER_NAME);
-    }
-
-    private void validateIdentifierFromRequest(HttpServletRequest request)
+    private String validateIdentifierFromRequest(HttpServletRequest request)
             throws AuthenticationFailedException {
 
-        String identifierFromRequest = getIdentifierFromRequest(request);
-        if (StringUtils.isBlank(identifierFromRequest)) {
+        String identifierFromRequest = request.getParameter(MagicLinkAuthenticatorConstants.USER_NAME);
+        if (!Boolean.parseBoolean(identifierFromRequest)) {
             throw new InvalidCredentialsException(MagicLinkAuthErrorConstants.ErrorMessages.EMPTY_USERNAME.getCode(),
                     MagicLinkAuthErrorConstants.ErrorMessages.EMPTY_USERNAME.getMessage());
         }
+        return identifierFromRequest;
     }
 
     /**
@@ -428,7 +425,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
     private User resolveUser(HttpServletRequest request, AuthenticationContext context)
             throws AuthenticationFailedException {
 
-        String username = getIdentifierFromRequest(request);
+        String username = validateIdentifierFromRequest(request);
 
         validateEmailUsername(username, context);
 
@@ -444,6 +441,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
     }
 
     private void setResolvedUserInContext(AuthenticationContext context, User user) {
+
         Map<String, Object> authProperties = context.getProperties();
         if (MapUtils.isEmpty(authProperties)) {
             authProperties = new HashMap<>();
