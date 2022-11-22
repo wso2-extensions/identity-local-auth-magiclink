@@ -25,6 +25,7 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.testng.PowerMockObjectFactory;
+import org.powermock.reflect.Whitebox;
 import org.testng.Assert;
 import org.testng.IObjectFactory;
 import org.testng.annotations.BeforeMethod;
@@ -134,6 +135,7 @@ public class MagicLinkAuthenticatorTest {
         mockStatic(FrameworkUtils.class);
         mockStatic(MultitenantUtils.class);
         mockUserStoreManager = mock(AbstractUserStoreManager.class);
+        Whitebox.setInternalState(magicLinkAuthenticator, "authenticationContext", context);
     }
 
     private void mockServiceURLBuilder() {
@@ -212,7 +214,7 @@ public class MagicLinkAuthenticatorTest {
     @Test(description = "Test case for canHandle() method identifier first flow.", dataProvider = "getCanHandleDataIdf")
     public void testCanHandleIdfFlow(String username, boolean canHandle) {
 
-        when(httpServletRequest.getParameter(AUTH_TYPE)).thenReturn(IDF);
+        when(context.getProperty(MagicLinkAuthenticatorConstants.IS_IDF_INITIATED_FROM_AUTHENTICATOR)).thenReturn(true);
         when(httpServletRequest.getParameter(MagicLinkAuthenticatorConstants.USER_NAME)).thenReturn(username);
         Assert.assertEquals(magicLinkAuthenticator.canHandle(httpServletRequest), canHandle);
     }
