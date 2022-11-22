@@ -66,8 +66,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.EMAIL_ADDRESS_CLAIM;
-import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.RequestParams.AUTH_TYPE;
-import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.RequestParams.IDF;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.RequestParams.RESTART_FLOW;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.USERNAME_CLAIM;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.BLOCKED_USERSTORE_DOMAINS_LIST;
@@ -82,14 +80,16 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
 
     private static final long serialVersionUID = 4345354156955223654L;
     private static final Log log = LogFactory.getLog(MagicLinkAuthenticator.class);
+    private AuthenticationContext authenticationContext;
 
     @Override
     public AuthenticatorFlowStatus process(HttpServletRequest request, HttpServletResponse response,
                                            AuthenticationContext context) throws AuthenticationFailedException,
             LogoutFailedException {
 
-        if (!isIdfInitiatedFromMagicLink(context)) {
-            return super.process(request, response, context);
+        this.authenticationContext = context;
+        if (!isIdfInitiatedFromMagicLink()) {
+            return super.process(request, response, authenticationContext);
         }
         if (context.isLogoutRequest()) {
             return AuthenticatorFlowStatus.SUCCESS_COMPLETED;
@@ -97,10 +97,10 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         if (getName().equals(context.getProperty(FrameworkConstants.LAST_FAILED_AUTHENTICATOR))) {
             context.setRetrying(true);
         }
-        User user = resolveUser(request, context);
-        setResolvedUserInContext(context, user);
-        context.setProperty(MagicLinkAuthenticatorConstants.IS_IDF_INITIATED_FROM_AUTHENTICATOR, false);
-        initiateAuthenticationRequest(request, response, context);
+        User user = resolveUser(request, authenticationContext);
+        setResolvedUserInContext(authenticationContext, user);
+        authenticationContext.setProperty(MagicLinkAuthenticatorConstants.IS_IDF_INITIATED_FROM_AUTHENTICATOR, false);
+        initiateAuthenticationRequest(request, response, authenticationContext);
         context.setCurrentAuthenticator(getName());
         context.setRetrying(false);
         return AuthenticatorFlowStatus.INCOMPLETE;
@@ -235,7 +235,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
     @Override
     public boolean canHandle(HttpServletRequest httpServletRequest) {
 
-        if (isIdentifierFirstRequest(httpServletRequest)) {
+        if (isIdfInitiatedFromMagicLink()) {
             if (log.isDebugEnabled()) {
                 log.debug("Magic link authenticator is handling identifier first flow ");
             }
@@ -484,21 +484,9 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         context.setSubject(authenticatedUser);
     }
 
-    /**
-     * Check if request type is identifier first.
-     *
-     * @param request HttpServletRequest.
-     * @return boolean.
-     */
-    private boolean isIdentifierFirstRequest(HttpServletRequest request) {
-
-        String authType = request.getParameter(AUTH_TYPE);
-        return IDF.equals(authType);
-    }
-
-    private boolean isIdfInitiatedFromMagicLink(AuthenticationContext context) {
+    private boolean isIdfInitiatedFromMagicLink() {
 
         return Boolean.TRUE.equals(
-                context.getProperty(MagicLinkAuthenticatorConstants.IS_IDF_INITIATED_FROM_AUTHENTICATOR));
+                authenticationContext.getProperty(MagicLinkAuthenticatorConstants.IS_IDF_INITIATED_FROM_AUTHENTICATOR));
     }
 }
