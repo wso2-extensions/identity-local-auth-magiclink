@@ -283,10 +283,9 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
      * @param magicToken      The magicToken sent to email.
      * @param applicationName The application name.
      * @param expiryTime      The expiry time.
-     * @throws AuthenticationFailedException In occasions of failing to send the email to the user.
      */
     protected void triggerEvent(String username, String userStoreDomain, String tenantDomain, String magicToken,
-            String applicationName, String expiryTime) throws AuthenticationFailedException {
+            String applicationName, String expiryTime) {
 
         String eventName = IdentityEventConstants.Event.TRIGGER_NOTIFICATION;
         Map<String, Object> properties = new HashMap<>();
@@ -302,9 +301,9 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             MagicLinkServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
         } catch (IdentityEventException e) {
             String errorMsg = String.format(
-                    "Error occurred while triggering the event for the user: %s in the tenant: %s", username,
+                    "Email notification sending failed for the user: %s in the tenant: %s", username,
                     tenantDomain);
-            throw new AuthenticationFailedException(errorMsg, e.getCause());
+            log.error(errorMsg);
         }
     }
 
