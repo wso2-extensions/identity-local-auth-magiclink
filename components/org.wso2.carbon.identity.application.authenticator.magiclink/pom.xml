@@ -66,6 +66,10 @@
             <artifactId>org.apache.felix.scr.ds-annotations</artifactId>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.identity.governance</groupId>
+            <artifactId>org.wso2.carbon.identity.auth.attribute.handler</artifactId>
+        </dependency>
 
         <!--Test Dependencies-->
         <dependency>
@@ -117,6 +121,8 @@
                             org.wso2.carbon.user.core.service; version="${carbon.kernel.package.import.version.range}",
                             org.wso2.carbon.user.api; version="${carbon.user.api.imp.pkg.version.range}",
                             org.wso2.carbon.user.core.*; version="${carbon.kernel.package.import.version.range}",
+                            org.wso2.carbon.identity.auth.attribute.handler.*;
+                            version="${identity.governance.imp.pkg.version.range}",
                         </Import-Package>
                         <Private-Package>
                             org.wso2.carbon.identity.application.authenticator.magiclink.internal,
