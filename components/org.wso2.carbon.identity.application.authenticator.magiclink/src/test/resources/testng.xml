@@ -22,6 +22,7 @@
     <test name="Magic-Link-Authenticator-Unit-Tests">
         <classes>
             <class name="org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorTest" />
+            <class name="org.wso2.carbon.identity.application.authenticator.magiclink.attribute.handler.MagicLinkAuthAttributeHandlerTest" />
         </classes>
     </test>
 </suite>

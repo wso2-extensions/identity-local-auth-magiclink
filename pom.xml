@@ -87,6 +87,11 @@
                 <artifactId>org.apache.felix.scr.ds-annotations</artifactId>
                 <version>${apache.felix.scr.ds.annotations.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.governance</groupId>
+                <artifactId>org.wso2.carbon.identity.auth.attribute.handler</artifactId>
+                <version>${identity.governance.version}</version>
+            </dependency>
 
             <!--Test Dependencies-->
             <dependency>
@@ -203,6 +208,7 @@
         <identity.outbound.auth.oidc.version>5.1.2</identity.outbound.auth.oidc.version>
         <commons-logging.version>4.4.3</commons-logging.version>
         <carbon.p2.plugin.version>1.5.3</carbon.p2.plugin.version>
+        <identity.governance.version>1.8.21</identity.governance.version>
 
         <!--Test Dependencies-->
         <testng.version>6.9.10</testng.version>
