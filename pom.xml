@@ -222,7 +222,7 @@
         <import.package.version.commons.logging>[1.2.0,2.0.0)</import.package.version.commons.logging>
         <osgi.framework.imp.pkg.version.range>[1.7.0, 2.0.0)</osgi.framework.imp.pkg.version.range>
         <carbon.base.imp.pkg.version.range>[1.0.0, 2.0.0)</carbon.base.imp.pkg.version.range>
-        <carbon.identity.framework.imp.pkg.version.range>[5.20.0, 6.0.0)
+        <carbon.identity.framework.imp.pkg.version.range>[5.20.0, 7.0.0)
         </carbon.identity.framework.imp.pkg.version.range>
         <carbon.kernel.package.import.version.range>[4.6.0, 5.0.0)</carbon.kernel.package.import.version.range>
         <carbon.kernel.imp.pkg.version.range>[4.5.0, 5.0.0)</carbon.kernel.imp.pkg.version.range>
