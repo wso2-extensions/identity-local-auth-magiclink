@@ -1,17 +1,17 @@
-/*
- * Copyright (c) 2022, WSO2 LLC. (http://www.wso2.org) All Rights Reserved.
+/**
+ * Copyright (c) 2022, WSO2 LLC. (https://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
+ * KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations
  * under the License.
  */
@@ -82,6 +82,16 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
     private static final Log log = LogFactory.getLog(MagicLinkAuthenticator.class);
     private AuthenticationContext authenticationContext;
 
+    /**
+     * Processes the authentication or logout flow for the Authenticator.
+     *
+     * @param request  The httpServletRequest.
+     * @param response The httpServletResponse.
+     * @param context  The authentication context.
+     * @return The AuthenticatorFlowStatus indicating the status of the flow.
+     * @throws AuthenticationFailedException If the authentication process fails.
+     * @throws LogoutFailedException         If the logout process fails.
+     */
     @Override
     public AuthenticatorFlowStatus process(HttpServletRequest request, HttpServletResponse response,
                                            AuthenticationContext context) throws AuthenticationFailedException,
@@ -94,7 +104,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         if (context.isLogoutRequest()) {
             return AuthenticatorFlowStatus.SUCCESS_COMPLETED;
         }
-        if (getName().equals(context.getProperty(FrameworkConstants.LAST_FAILED_AUTHENTICATOR))) {
+        if (StringUtils.equals(getName(), (String) context.getProperty(FrameworkConstants.LAST_FAILED_AUTHENTICATOR))) {
             context.setRetrying(true);
         }
         User user = resolveUser(request, authenticationContext);
@@ -116,7 +126,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
      */
     @Override
     protected void initiateAuthenticationRequest(HttpServletRequest request, HttpServletResponse response,
-            AuthenticationContext context) throws AuthenticationFailedException {
+                                                 AuthenticationContext context) throws AuthenticationFailedException {
 
         if (context.getLastAuthenticatedUser() == null) {
             context.setProperty(MagicLinkAuthenticatorConstants.IS_IDF_INITIATED_FROM_AUTHENTICATOR, true);
@@ -189,7 +199,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
      */
     @Override
     protected void processAuthenticationResponse(HttpServletRequest request, HttpServletResponse response,
-            AuthenticationContext context) throws AuthenticationFailedException {
+                                                 AuthenticationContext context) throws AuthenticationFailedException {
 
         if (StringUtils.isEmpty(request.getParameter(MagicLinkAuthenticatorConstants.MAGIC_LINK_TOKEN))) {
             throw new InvalidCredentialsException("MagicToken cannot be null.");
@@ -205,7 +215,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                 UserCoreUtil.setDomainInThreadLocal(magicLinkAuthContextData.getUser().getUserStoreDomain());
                 AuthenticatedUser authenticatedUser =
                         AuthenticatedUser.createLocalAuthenticatedUserFromSubjectIdentifier(
-                        magicLinkAuthContextData.getUser().getFullQualifiedUsername());
+                                magicLinkAuthContextData.getUser().getFullQualifiedUsername());
                 context.setSubject(authenticatedUser);
                 MagicLinkAuthContextCache.getInstance().clearCacheEntry(magicLinkAuthContextCacheKey);
             } else {
@@ -285,7 +295,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
      * @param expiryTime      The expiry time.
      */
     protected void triggerEvent(String username, String userStoreDomain, String tenantDomain, String magicToken,
-            String applicationName, String expiryTime) {
+                                String applicationName, String expiryTime) {
 
         String eventName = IdentityEventConstants.Event.TRIGGER_NOTIFICATION;
         Map<String, Object> properties = new HashMap<>();
@@ -417,8 +427,9 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
     /**
      * This method is used to resolve the user from authentication response from identifier handler.
      *
-     * @param request  The httpServletRequest.
-     * @param context  The authentication context.
+     * @param request The httpServletRequest.
+     * @param context The authentication context.
+     * @return The resolved User object.
      * @throws AuthenticationFailedException In occasions of failing.
      */
     private User resolveUser(HttpServletRequest request, AuthenticationContext context)
