@@ -152,9 +152,8 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                         e.getMessage(), user, e);
             }
         } else {
-            Optional<User> optionalUser = getUser(context.getLastAuthenticatedUser());
-            if (optionalUser.isPresent()) {
-                User user = optionalUser.get();
+            User user = getUser(context.getLastAuthenticatedUser());
+            if (user != null) {
                 MagicLinkAuthContextData magicLinkAuthContextData = new MagicLinkAuthContextData();
                 String magicToken = TokenGenerator.generateToken(MagicLinkAuthenticatorConstants.TOKEN_LENGTH);
                 magicLinkAuthContextData.setMagicToken(magicToken);
@@ -335,50 +334,6 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             return Long.parseLong(getAuthenticatorConfig().getParameterMap().get(EXPIRY_TIME));
         }
         return DEFAULT_EXPIRY_TIME;
-    }
-
-    private Optional<User> getUser(AuthenticatedUser authenticatedUser) throws AuthenticationFailedException {
-
-        User user = null;
-        String tenantDomain = authenticatedUser.getTenantDomain();
-        if (tenantDomain == null) {
-            return Optional.empty();
-        }
-        int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
-        try {
-            UserRealm userRealm = MagicLinkServiceDataHolder.getInstance().getRealmService()
-                    .getTenantUserRealm(tenantId);
-            if (userRealm != null) {
-                UserStoreManager userStoreManager = (UserStoreManager) userRealm.getUserStoreManager();
-                List<User> userList = ((AbstractUserStoreManager) userStoreManager).getUserListWithID(
-                        USERNAME_CLAIM, authenticatedUser.getUserName(), null);
-                if (userList.isEmpty()) {
-                    userList = ((AbstractUserStoreManager) userStoreManager).getUserListWithID(
-                            EMAIL_ADDRESS_CLAIM, authenticatedUser.getUserName(), null);
-                }
-                userList = getValidUsers(userList);
-                if (CollectionUtils.isEmpty(userList)) {
-                    return Optional.empty();
-                }
-                if (userList.size() > 1) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("There are more than one user with the provided username claim value: "
-                                + authenticatedUser.getUserName());
-                    }
-                    return Optional.empty();
-                }
-                user = userList.get(0);
-            } else {
-                log.error("Cannot find the user realm for the given tenant: " + tenantDomain);
-            }
-        } catch (UserStoreException e) {
-            String msg = "getUserListWithID function failed while retrieving the user list.";
-            if (log.isDebugEnabled()) {
-                log.debug(msg, e);
-            }
-            throw new AuthenticationFailedException(msg, e);
-        }
-        return Optional.ofNullable(user);
     }
 
     /**
