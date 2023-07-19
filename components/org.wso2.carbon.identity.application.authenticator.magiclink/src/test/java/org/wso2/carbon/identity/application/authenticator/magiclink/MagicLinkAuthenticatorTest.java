@@ -37,6 +37,7 @@ import org.wso2.carbon.identity.application.authentication.framework.config.Conf
 import org.wso2.carbon.identity.application.authentication.framework.context.AuthenticationContext;
 import org.wso2.carbon.identity.application.authentication.framework.exception.AuthenticationFailedException;
 import org.wso2.carbon.identity.application.authentication.framework.exception.InvalidCredentialsException;
+import org.wso2.carbon.identity.application.authentication.framework.internal.FrameworkServiceDataHolder;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.application.authenticator.magiclink.cache.MagicLinkAuthContextCache;
@@ -79,7 +80,8 @@ import static org.wso2.carbon.identity.application.authentication.framework.util
 
 @PrepareForTest({ TokenGenerator.class, IdentityUtil.class, ServiceURLBuilder.class, IdentityTenantUtil.class,
         AbstractUserStoreManager.class, MagicLinkAuthContextCache.class, MagicLinkServiceDataHolder.class,
-        ConfigurationFacade.class, FrameworkUtils.class, MultitenantUtils.class, UserCoreUtil.class})
+        ConfigurationFacade.class, FrameworkUtils.class, MultitenantUtils.class, UserCoreUtil.class,
+        FrameworkServiceDataHolder.class})
 @PowerMockIgnore({ "javax.net.*", "javax.security.*", "javax.crypto.*", "javax.xml.*" })
 public class MagicLinkAuthenticatorTest {
 
@@ -122,6 +124,8 @@ public class MagicLinkAuthenticatorTest {
     @Mock
     private ConfigurationFacade mockConfigurationFacade;
 
+    private FrameworkServiceDataHolder frameworkServiceDataHolder;
+
     @BeforeMethod
     public void setUp() {
 
@@ -134,6 +138,8 @@ public class MagicLinkAuthenticatorTest {
         mockStatic(MultitenantUtils.class);
         mockUserStoreManager = mock(AbstractUserStoreManager.class);
         Whitebox.setInternalState(magicLinkAuthenticator, "authenticationContext", context);
+        frameworkServiceDataHolder = mock(FrameworkServiceDataHolder.class);
+        mockStatic(FrameworkServiceDataHolder.class);
     }
 
     private void mockServiceURLBuilder() {
@@ -490,8 +496,9 @@ public class MagicLinkAuthenticatorTest {
         MagicLinkServiceDataHolder.getInstance().setRealmService(mockRealmService);
         when(IdentityUtil.getPrimaryDomainName()).thenReturn(USER_STORE_DOMAIN);
         when(IdentityTenantUtil.getTenantId(SUPER_TENANT_DOMAIN)).thenReturn(-1234);
-        AuthenticatedUser authenticatedUser = AuthenticatedUser.createLocalAuthenticatedUserFromSubjectIdentifier(
-                USERNAME);
+        AuthenticatedUser authenticatedUser = new AuthenticatedUser();
+        authenticatedUser.setAuthenticatedSubjectIdentifier(USERNAME);
+        authenticatedUser.setUserName(USERNAME);
         when(context.getLastAuthenticatedUser()).thenReturn(authenticatedUser);
         when(TokenGenerator.generateToken(anyInt())).thenReturn(DUMMY_MAGIC_TOKEN);
         mockStatic(MagicLinkAuthContextCache.class);
@@ -512,6 +519,8 @@ public class MagicLinkAuthenticatorTest {
         when(mockRealmService.getTenantUserRealm(anyInt())).thenReturn(mockUserRealm);
         when(mockUserRealm.getUserStoreManager()).thenReturn(mockUserStoreManager);
         when(mockUserStoreManager.getUserListWithID(USERNAME_CLAIM, USERNAME, null)).thenReturn(userList);
+        PowerMockito.when(FrameworkServiceDataHolder.getInstance()).thenReturn(frameworkServiceDataHolder);
+        PowerMockito.when(frameworkServiceDataHolder.getRealmService()).thenReturn(mockRealmService);
 
         Mockito.doNothing().when(httpServletResponse).sendRedirect(anyString());
 
