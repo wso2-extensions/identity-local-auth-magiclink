@@ -39,6 +39,7 @@ import org.wso2.carbon.identity.application.authentication.framework.exception.A
 import org.wso2.carbon.identity.application.authentication.framework.exception.InvalidCredentialsException;
 import org.wso2.carbon.identity.application.authentication.framework.internal.FrameworkServiceDataHolder;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
+import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.application.authenticator.magiclink.cache.MagicLinkAuthContextCache;
 import org.wso2.carbon.identity.application.authenticator.magiclink.cache.MagicLinkAuthContextCacheEntry;
@@ -461,8 +462,9 @@ public class MagicLinkAuthenticatorTest {
         magicLinkAuthenticator.initiateAuthenticationRequest(httpServletRequest, httpServletResponse, context);
         assertEquals(redirect, DUMMY_LOGIN_PAGEURL + ("?" + DUMMY_QUERY_PARAMS)
                 + MagicLinkAuthenticatorConstants.AUTHENTICATORS +
-                MagicLinkAuthenticatorConstants.IDF_HANDLER_NAME + ":" +
-                MagicLinkAuthenticatorConstants.LOCAL);
+                MagicLinkAuthenticatorConstants.AUTHENTICATOR_NAME + ":" +
+                MagicLinkAuthenticatorConstants.LOCAL +
+                "&" + FrameworkConstants.RequestParams.INITIATE_IDENTIFIER_FIRST + "=true");
     }
 
     @Test(description = "Test case for initiateAuthenticationRequest() method identifier first flow.")

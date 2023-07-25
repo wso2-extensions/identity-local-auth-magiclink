@@ -141,8 +141,9 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                 }
                 response.sendRedirect(loginPage + ("?" + queryParams)
                         + MagicLinkAuthenticatorConstants.AUTHENTICATORS +
-                        MagicLinkAuthenticatorConstants.IDF_HANDLER_NAME + ":" +
-                        MagicLinkAuthenticatorConstants.LOCAL);
+                        MagicLinkAuthenticatorConstants.AUTHENTICATOR_NAME + ":" +
+                        MagicLinkAuthenticatorConstants.LOCAL +
+                        "&" + FrameworkConstants.RequestParams.INITIATE_IDENTIFIER_FIRST + "=true");
             } catch (IOException e) {
                 org.wso2.carbon.identity.application.common.model.User user =
                         org.wso2.carbon.identity.application.common.model.User
