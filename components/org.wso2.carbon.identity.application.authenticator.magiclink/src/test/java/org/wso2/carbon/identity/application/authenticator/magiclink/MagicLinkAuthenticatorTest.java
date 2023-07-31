@@ -45,6 +45,7 @@ import org.wso2.carbon.identity.application.authenticator.magiclink.cache.MagicL
 import org.wso2.carbon.identity.application.authenticator.magiclink.cache.MagicLinkAuthContextCacheKey;
 import org.wso2.carbon.identity.application.authenticator.magiclink.internal.MagicLinkServiceDataHolder;
 import org.wso2.carbon.identity.application.authenticator.magiclink.model.MagicLinkAuthContextData;
+import org.wso2.carbon.identity.central.log.mgt.utils.LoggerUtils;
 import org.wso2.carbon.identity.core.ServiceURL;
 import org.wso2.carbon.identity.core.ServiceURLBuilder;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
@@ -81,7 +82,7 @@ import static org.wso2.carbon.identity.application.authentication.framework.util
 @PrepareForTest({ TokenGenerator.class, IdentityUtil.class, ServiceURLBuilder.class, IdentityTenantUtil.class,
         AbstractUserStoreManager.class, MagicLinkAuthContextCache.class, MagicLinkServiceDataHolder.class,
         ConfigurationFacade.class, FrameworkUtils.class, MultitenantUtils.class, UserCoreUtil.class,
-        FrameworkServiceDataHolder.class})
+        FrameworkServiceDataHolder.class, LoggerUtils.class })
 @PowerMockIgnore({ "javax.net.*", "javax.security.*", "javax.crypto.*", "javax.xml.*" })
 public class MagicLinkAuthenticatorTest {
 
@@ -140,6 +141,8 @@ public class MagicLinkAuthenticatorTest {
         Whitebox.setInternalState(magicLinkAuthenticator, "authenticationContext", context);
         frameworkServiceDataHolder = mock(FrameworkServiceDataHolder.class);
         mockStatic(FrameworkServiceDataHolder.class);
+        mockStatic(LoggerUtils.class);
+        when(LoggerUtils.isDiagnosticLogsEnabled()).thenReturn(false);
     }
 
     private void mockServiceURLBuilder() {

@@ -39,39 +39,37 @@ import org.wso2.carbon.identity.application.authenticator.magiclink.cache.MagicL
 import org.wso2.carbon.identity.application.authenticator.magiclink.internal.MagicLinkServiceDataHolder;
 import org.wso2.carbon.identity.application.authenticator.magiclink.model.MagicLinkAuthContextData;
 import org.wso2.carbon.identity.application.authenticator.magiclink.util.MagicLinkAuthErrorConstants;
+import org.wso2.carbon.identity.central.log.mgt.utils.LogConstants;
+import org.wso2.carbon.identity.central.log.mgt.utils.LoggerUtils;
 import org.wso2.carbon.identity.core.ServiceURLBuilder;
 import org.wso2.carbon.identity.core.URLBuilderException;
-import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
-import org.wso2.carbon.user.api.UserRealm;
-import org.wso2.carbon.user.api.UserStoreException;
-import org.wso2.carbon.user.core.UserStoreManager;
-import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.common.User;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
+import org.wso2.carbon.utils.DiagnosticLog;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.EMAIL_ADDRESS_CLAIM;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.RequestParams.RESTART_FLOW;
-import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.USERNAME_CLAIM;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.BLOCKED_USERSTORE_DOMAINS_LIST;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.BLOCKED_USERSTORE_DOMAINS_SEPARATOR;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.DEFAULT_EXPIRY_TIME;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.EXPIRY_TIME;
+import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.LogConstants.ActionIDs.PROCESS_AUTHENTICATION_RESPONSE;
+import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.LogConstants.ActionIDs.SEND_MAGIC_LINK;
+import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.LogConstants.ActionIDs.VALIDATE_MAGIC_LINK_REQUEST;
+import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.LogConstants.MAGIC_LINK_AUTH_SERVICE;
 
 /**
  * Authenticator of MagicLink.
@@ -128,6 +126,25 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
     protected void initiateAuthenticationRequest(HttpServletRequest request, HttpServletResponse response,
                                                  AuthenticationContext context) throws AuthenticationFailedException {
 
+        // This diagnostic log will be used to log the details of the authentication redirection at the end of
+        // the flow.
+        DiagnosticLog.DiagnosticLogBuilder finalDiagnosticLogBuilder = null;
+        if (LoggerUtils.isDiagnosticLogsEnabled()) {
+            DiagnosticLog.DiagnosticLogBuilder diagnosticLogBuilder = new DiagnosticLog.DiagnosticLogBuilder(
+                    MAGIC_LINK_AUTH_SERVICE, VALIDATE_MAGIC_LINK_REQUEST);
+            diagnosticLogBuilder.resultMessage("Validating magic link authentication request.")
+                    .logDetailLevel(DiagnosticLog.LogDetailLevel.APPLICATION)
+                    .resultStatus(DiagnosticLog.ResultStatus.SUCCESS)
+                    .inputParam(LogConstants.InputKeys.STEP, context.getCurrentStep())
+                    .inputParams(getApplicationDetails(context));
+            LoggerUtils.triggerDiagnosticLogEvent(diagnosticLogBuilder);
+            finalDiagnosticLogBuilder = new DiagnosticLog.DiagnosticLogBuilder(
+                    MAGIC_LINK_AUTH_SERVICE, VALIDATE_MAGIC_LINK_REQUEST);
+            finalDiagnosticLogBuilder.logDetailLevel(DiagnosticLog.LogDetailLevel.APPLICATION)
+                    .resultStatus(DiagnosticLog.ResultStatus.SUCCESS)
+                    .inputParam(LogConstants.InputKeys.STEP, context.getCurrentStep())
+                    .inputParams(getApplicationDetails(context));
+        }
         if (context.getLastAuthenticatedUser() == null) {
             context.setProperty(MagicLinkAuthenticatorConstants.IS_IDF_INITIATED_FROM_AUTHENTICATOR, true);
             String loginPage = ConfigurationFacade.getInstance().getAuthenticationEndpointURL();
@@ -139,10 +156,15 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                             context.getServiceProviderName());
                     log.debug(logMsg);
                 }
-                response.sendRedirect(loginPage + ("?" + queryParams)
-                        + MagicLinkAuthenticatorConstants.AUTHENTICATORS +
-                        MagicLinkAuthenticatorConstants.IDF_HANDLER_NAME + ":" +
-                        MagicLinkAuthenticatorConstants.LOCAL);
+                String redirectUri = loginPage + ("?" + queryParams) + MagicLinkAuthenticatorConstants.AUTHENTICATORS +
+                        MagicLinkAuthenticatorConstants.IDF_HANDLER_NAME + ":" + MagicLinkAuthenticatorConstants.LOCAL;
+                response.sendRedirect(redirectUri);
+                if (LoggerUtils.isDiagnosticLogsEnabled() && finalDiagnosticLogBuilder != null) {
+                    finalDiagnosticLogBuilder.resultMessage("Redirecting to identifier first flow since the last " +
+                                    "authenticated user is null.")
+                            .inputParam(LogConstants.InputKeys.REDIREDCT_URI, redirectUri);
+                    LoggerUtils.triggerDiagnosticLogEvent(finalDiagnosticLogBuilder);
+                }
             } catch (IOException e) {
                 org.wso2.carbon.identity.application.common.model.User user =
                         org.wso2.carbon.identity.application.common.model.User
@@ -169,8 +191,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                 if (StringUtils.isNotEmpty(magicToken)) {
                     String expiryTime =
                             TimeUnit.SECONDS.toMinutes(getExpiryTime()) + " " + TimeUnit.MINUTES.name().toLowerCase();
-                    triggerEvent(user.getUsername(), user.getUserStoreDomain(), user.getTenantDomain(), magicToken,
-                            context.getServiceProviderName(), expiryTime);
+                    triggerEvent(user, context, magicToken, expiryTime);
                 }
             }
             try {
@@ -178,6 +199,11 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                         .addPath(MagicLinkAuthenticatorConstants.MAGIC_LINK_NOTIFICATION_PAGE).build()
                         .getAbsolutePublicURL();
                 response.sendRedirect(url);
+                if (LoggerUtils.isDiagnosticLogsEnabled() && finalDiagnosticLogBuilder != null) {
+                    finalDiagnosticLogBuilder.resultMessage("Redirecting to magic link notification page.")
+                            .inputParam(LogConstants.InputKeys.REDIREDCT_URI, url);
+                    LoggerUtils.triggerDiagnosticLogEvent(finalDiagnosticLogBuilder);
+                }
             } catch (IOException e) {
                 throw new AuthenticationFailedException(
                         "Error while redirecting to the magic link notification page.", e);
@@ -200,6 +226,16 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
     protected void processAuthenticationResponse(HttpServletRequest request, HttpServletResponse response,
                                                  AuthenticationContext context) throws AuthenticationFailedException {
 
+        if (LoggerUtils.isDiagnosticLogsEnabled()) {
+            DiagnosticLog.DiagnosticLogBuilder diagnosticLogBuilder = new DiagnosticLog.DiagnosticLogBuilder(
+                    MAGIC_LINK_AUTH_SERVICE, PROCESS_AUTHENTICATION_RESPONSE);
+            diagnosticLogBuilder.resultMessage("Processing magic link authentication response.")
+                    .logDetailLevel(DiagnosticLog.LogDetailLevel.APPLICATION)
+                    .resultStatus(DiagnosticLog.ResultStatus.SUCCESS)
+                    .inputParam(LogConstants.InputKeys.STEP, context.getCurrentStep())
+                    .inputParams(getApplicationDetails(context));
+            LoggerUtils.triggerDiagnosticLogEvent(diagnosticLogBuilder);
+        }
         if (StringUtils.isEmpty(request.getParameter(MagicLinkAuthenticatorConstants.MAGIC_LINK_TOKEN))) {
             throw new InvalidCredentialsException("MagicToken cannot be null.");
         } else {
@@ -224,6 +260,17 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                 throw new InvalidCredentialsException("MagicToken is not valid.");
             }
         }
+        if (LoggerUtils.isDiagnosticLogsEnabled()) {
+            DiagnosticLog.DiagnosticLogBuilder diagnosticLogBuilder = new DiagnosticLog.DiagnosticLogBuilder(
+                    MAGIC_LINK_AUTH_SERVICE, PROCESS_AUTHENTICATION_RESPONSE);
+            diagnosticLogBuilder.resultMessage("Successfully processed magic link authentication response.")
+                    .logDetailLevel(DiagnosticLog.LogDetailLevel.APPLICATION)
+                    .resultStatus(DiagnosticLog.ResultStatus.SUCCESS)
+                    .inputParam(LogConstants.InputKeys.STEP, context.getCurrentStep())
+                    .inputParams(getApplicationDetails(context))
+                    .inputParam(LogConstants.InputKeys.USER_ID, context.getSubject().getLoggableUserId());
+            LoggerUtils.triggerDiagnosticLogEvent(diagnosticLogBuilder);
+        }
     }
 
     @Override
@@ -244,17 +291,33 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
     @Override
     public boolean canHandle(HttpServletRequest httpServletRequest) {
 
+        DiagnosticLog.DiagnosticLogBuilder diagnosticLogBuilder = null;
+        if (LoggerUtils.isDiagnosticLogsEnabled()) {
+            diagnosticLogBuilder = new DiagnosticLog.DiagnosticLogBuilder(MAGIC_LINK_AUTH_SERVICE,
+                    FrameworkConstants.LogConstants.ActionIDs.HANDLE_AUTH_STEP);
+            diagnosticLogBuilder.logDetailLevel(DiagnosticLog.LogDetailLevel.INTERNAL_SYSTEM)
+                    .resultStatus(DiagnosticLog.ResultStatus.SUCCESS);
+        }
         if (isIdfInitiatedFromMagicLink()) {
             if (log.isDebugEnabled()) {
                 log.debug("Magic link authenticator is handling identifier first flow ");
             }
             String userName = httpServletRequest.getParameter(MagicLinkAuthenticatorConstants.USER_NAME);
             String restart = httpServletRequest.getParameter(RESTART_FLOW);
-
-            return StringUtils.isNotEmpty(userName) || StringUtils.isNotEmpty(restart);
+            boolean canHandle = StringUtils.isNotEmpty(userName) || StringUtils.isNotEmpty(restart);
+            if (LoggerUtils.isDiagnosticLogsEnabled() && diagnosticLogBuilder != null && canHandle) {
+                diagnosticLogBuilder.resultMessage("Magic link authenticator is handling identifier first flow.");
+                LoggerUtils.triggerDiagnosticLogEvent(diagnosticLogBuilder);
+            }
+            return canHandle;
         }
-        return StringUtils.isNotEmpty(
-                httpServletRequest.getParameter(MagicLinkAuthenticatorConstants.MAGIC_LINK_TOKEN));
+        boolean canHandle = StringUtils.isNotEmpty(httpServletRequest.getParameter(
+                MagicLinkAuthenticatorConstants.MAGIC_LINK_TOKEN));
+        if (LoggerUtils.isDiagnosticLogsEnabled() && diagnosticLogBuilder != null && canHandle) {
+            diagnosticLogBuilder.resultMessage("Magic link authenticator is handling the authentication.");
+            LoggerUtils.triggerDiagnosticLogEvent(diagnosticLogBuilder);
+        }
+        return canHandle;
     }
 
     @Override
@@ -286,33 +349,50 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
     /**
      * Method to Trigger the Magic Link event.
      *
-     * @param username        The username of the user.
-     * @param userStoreDomain The serStoreDomain of the user.
-     * @param tenantDomain    The tenantDomain of the user.
+     * @param user            The user.
+     * @param context         The authentication context.
      * @param magicToken      The magicToken sent to email.
-     * @param applicationName The application name.
      * @param expiryTime      The expiry time.
      */
-    protected void triggerEvent(String username, String userStoreDomain, String tenantDomain, String magicToken,
-                                String applicationName, String expiryTime) {
+    protected void triggerEvent(User user, AuthenticationContext context, String magicToken, String expiryTime) {
 
         String eventName = IdentityEventConstants.Event.TRIGGER_NOTIFICATION;
         Map<String, Object> properties = new HashMap<>();
-        properties.put(IdentityEventConstants.EventProperty.USER_NAME, username);
-        properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, userStoreDomain);
-        properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, tenantDomain);
+        properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUsername());
+        properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
+        properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
         properties.put(MagicLinkAuthenticatorConstants.MAGIC_TOKEN, magicToken);
         properties.put(MagicLinkAuthenticatorConstants.TEMPLATE_TYPE, MagicLinkAuthenticatorConstants.EVENT_NAME);
-        properties.put(IdentityEventConstants.EventProperty.APPLICATION_NAME, applicationName);
+        properties.put(IdentityEventConstants.EventProperty.APPLICATION_NAME, context.getServiceProviderName());
         properties.put(MagicLinkAuthenticatorConstants.EXPIRYTIME, expiryTime);
         Event identityMgtEvent = new Event(eventName, properties);
+        DiagnosticLog.DiagnosticLogBuilder diagnosticLogBuilder = null;
+        if (LoggerUtils.isDiagnosticLogsEnabled()) {
+            diagnosticLogBuilder = new DiagnosticLog.DiagnosticLogBuilder(MAGIC_LINK_AUTH_SERVICE, SEND_MAGIC_LINK);
+            diagnosticLogBuilder.logDetailLevel(DiagnosticLog.LogDetailLevel.APPLICATION)
+                    .inputParam("user store domain", user.getUserStoreDomain())
+                    .inputParam(LogConstants.InputKeys.USER, LoggerUtils.isLogMaskingEnable ?
+                            LoggerUtils.getMaskedContent(user.getUsername()) : user.getUsername())
+                    .inputParam(LogConstants.InputKeys.USER_ID, user.getUserID())
+                    .inputParams(getApplicationDetails(context));
+        }
         try {
             MagicLinkServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
+            if (LoggerUtils.isDiagnosticLogsEnabled() && diagnosticLogBuilder != null) {
+                diagnosticLogBuilder.resultMessage("Successfully sent the magic link notification.")
+                        .resultStatus(DiagnosticLog.ResultStatus.SUCCESS);
+                LoggerUtils.triggerDiagnosticLogEvent(diagnosticLogBuilder);
+            }
         } catch (IdentityEventException e) {
             String errorMsg = String.format(
-                    "Email notification sending failed for the user: %s in the tenant: %s", username,
-                    tenantDomain);
+                    "Email notification sending failed for the user: %s in the tenant: %s", user.getUsername(),
+                    user.getTenantDomain());
             log.error(errorMsg);
+            if (LoggerUtils.isDiagnosticLogsEnabled() && diagnosticLogBuilder != null) {
+                diagnosticLogBuilder.resultMessage("Failed to send magic link notification.")
+                        .resultStatus(DiagnosticLog.ResultStatus.FAILED);
+                LoggerUtils.triggerDiagnosticLogEvent(diagnosticLogBuilder);
+            }
         }
     }
 
@@ -451,5 +531,21 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
 
         return Boolean.TRUE.equals(
                 authenticationContext.getProperty(MagicLinkAuthenticatorConstants.IS_IDF_INITIATED_FROM_AUTHENTICATOR));
+    }
+
+    /** Add application details to a map.
+     *
+     * @param context AuthenticationContext.
+     * @return Map of application details.
+     */
+    private Map<String, String> getApplicationDetails(AuthenticationContext context) {
+
+        Map<String, String> applicationDetailsMap = new HashMap<>();
+        FrameworkUtils.getApplicationResourceId(context).ifPresent(applicationId ->
+                applicationDetailsMap.put(LogConstants.InputKeys.APPLICATION_ID, applicationId));
+        FrameworkUtils.getApplicationName(context).ifPresent(applicationName ->
+                applicationDetailsMap.put(LogConstants.InputKeys.APPLICATION_NAME,
+                        applicationName));
+        return applicationDetailsMap;
     }
 }
