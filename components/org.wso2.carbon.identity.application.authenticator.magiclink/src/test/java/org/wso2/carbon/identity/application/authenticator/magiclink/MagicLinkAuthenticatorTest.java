@@ -64,9 +64,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doAnswer;
@@ -95,6 +97,8 @@ public class MagicLinkAuthenticatorTest {
     private static final String DEFAULT_SERVER_URL = "http://localhost:9443";
     private static final String DUMMY_LOGIN_PAGEURL = "dummyLoginPageurl";
     private static final String DUMMY_QUERY_PARAMS = "dummyQueryParams";
+    private static final String DUMMY_APP_NAME = "dummyAppName";
+    private static final String DUMMY_APP_RESOURCE_ID = "dummyAppResourceId";
     private MagicLinkAuthenticator magicLinkAuthenticator;
     private String redirect;
 
@@ -142,7 +146,10 @@ public class MagicLinkAuthenticatorTest {
         frameworkServiceDataHolder = mock(FrameworkServiceDataHolder.class);
         mockStatic(FrameworkServiceDataHolder.class);
         mockStatic(LoggerUtils.class);
-        when(LoggerUtils.isDiagnosticLogsEnabled()).thenReturn(false);
+        when(LoggerUtils.isDiagnosticLogsEnabled()).thenReturn(true);
+        mockStatic(FrameworkUtils.class);
+        when(FrameworkUtils.getApplicationName(any())).thenReturn(Optional.of(DUMMY_APP_NAME));
+        when(FrameworkUtils.getApplicationResourceId(any())).thenReturn(Optional.of(DUMMY_APP_RESOURCE_ID));
     }
 
     private void mockServiceURLBuilder() {
