@@ -30,6 +30,7 @@ import org.wso2.carbon.identity.application.authentication.framework.context.Aut
 import org.wso2.carbon.identity.application.authentication.framework.exception.AuthenticationFailedException;
 import org.wso2.carbon.identity.application.authentication.framework.exception.InvalidCredentialsException;
 import org.wso2.carbon.identity.application.authentication.framework.exception.LogoutFailedException;
+import org.wso2.carbon.identity.application.authentication.framework.exception.UserIdNotFoundException;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
@@ -59,6 +60,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.RequestParams.RESTART_FLOW;
@@ -267,8 +269,9 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                     .logDetailLevel(DiagnosticLog.LogDetailLevel.APPLICATION)
                     .resultStatus(DiagnosticLog.ResultStatus.SUCCESS)
                     .inputParam(LogConstants.InputKeys.STEP, context.getCurrentStep())
-                    .inputParams(getApplicationDetails(context))
-                    .inputParam(LogConstants.InputKeys.USER_ID, context.getSubject().getLoggableUserId());
+                    .inputParams(getApplicationDetails(context));
+            Optional<String> optionalUserId = getUserId(context);
+            optionalUserId.ifPresent(userId -> diagnosticLogBuilder.inputParam(LogConstants.InputKeys.USER_ID, userId));
             LoggerUtils.triggerDiagnosticLogEvent(diagnosticLogBuilder);
         }
     }
@@ -547,5 +550,20 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                 applicationDetailsMap.put(LogConstants.InputKeys.APPLICATION_NAME,
                         applicationName));
         return applicationDetailsMap;
+    }
+
+    private Optional<String> getUserId(AuthenticationContext context) {
+
+        if (context.getSubject() == null) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.ofNullable(context.getSubject().getUserId());
+        } catch (UserIdNotFoundException e) {
+            if (log.isDebugEnabled()) {
+                log.debug("Error while getting the user id from the subject.", e);
+            }
+            return Optional.empty();
+        }
     }
 }
