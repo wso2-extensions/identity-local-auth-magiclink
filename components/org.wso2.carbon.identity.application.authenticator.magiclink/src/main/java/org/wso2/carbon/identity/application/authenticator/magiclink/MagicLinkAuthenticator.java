@@ -554,16 +554,15 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
 
     private Optional<String> getUserId(AuthenticationContext context) {
 
-        if (context.getSubject() == null) {
-            return Optional.empty();
-        }
-        try {
-            return Optional.ofNullable(context.getSubject().getUserId());
-        } catch (UserIdNotFoundException e) {
-            if (log.isDebugEnabled()) {
-                log.debug("Error while getting the user id from the subject.", e);
+        return Optional.ofNullable(context.getSubject()).map(authenticatedUser -> {
+            try {
+                return authenticatedUser.getUserId();
+            } catch (UserIdNotFoundException e) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Error while getting the user id from the subject.", e);
+                }
+                return null;
             }
-            return Optional.empty();
-        }
+        });
     }
 }
