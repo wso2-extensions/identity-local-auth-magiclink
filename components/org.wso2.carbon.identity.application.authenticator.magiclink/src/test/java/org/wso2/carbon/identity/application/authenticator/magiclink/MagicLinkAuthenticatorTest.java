@@ -45,6 +45,7 @@ import org.wso2.carbon.identity.application.authenticator.magiclink.cache.MagicL
 import org.wso2.carbon.identity.application.authenticator.magiclink.cache.MagicLinkAuthContextCacheKey;
 import org.wso2.carbon.identity.application.authenticator.magiclink.internal.MagicLinkServiceDataHolder;
 import org.wso2.carbon.identity.application.authenticator.magiclink.model.MagicLinkAuthContextData;
+import org.wso2.carbon.identity.central.log.mgt.utils.LoggerUtils;
 import org.wso2.carbon.identity.core.ServiceURL;
 import org.wso2.carbon.identity.core.ServiceURLBuilder;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
@@ -63,9 +64,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doAnswer;
@@ -81,7 +84,7 @@ import static org.wso2.carbon.identity.application.authentication.framework.util
 @PrepareForTest({ TokenGenerator.class, IdentityUtil.class, ServiceURLBuilder.class, IdentityTenantUtil.class,
         AbstractUserStoreManager.class, MagicLinkAuthContextCache.class, MagicLinkServiceDataHolder.class,
         ConfigurationFacade.class, FrameworkUtils.class, MultitenantUtils.class, UserCoreUtil.class,
-        FrameworkServiceDataHolder.class})
+        FrameworkServiceDataHolder.class, LoggerUtils.class })
 @PowerMockIgnore({ "javax.net.*", "javax.security.*", "javax.crypto.*", "javax.xml.*" })
 public class MagicLinkAuthenticatorTest {
 
@@ -94,6 +97,8 @@ public class MagicLinkAuthenticatorTest {
     private static final String DEFAULT_SERVER_URL = "http://localhost:9443";
     private static final String DUMMY_LOGIN_PAGEURL = "dummyLoginPageurl";
     private static final String DUMMY_QUERY_PARAMS = "dummyQueryParams";
+    private static final String DUMMY_APP_NAME = "dummyAppName";
+    private static final String DUMMY_APP_RESOURCE_ID = "dummyAppResourceId";
     private MagicLinkAuthenticator magicLinkAuthenticator;
     private String redirect;
 
@@ -140,6 +145,11 @@ public class MagicLinkAuthenticatorTest {
         Whitebox.setInternalState(magicLinkAuthenticator, "authenticationContext", context);
         frameworkServiceDataHolder = mock(FrameworkServiceDataHolder.class);
         mockStatic(FrameworkServiceDataHolder.class);
+        mockStatic(LoggerUtils.class);
+        when(LoggerUtils.isDiagnosticLogsEnabled()).thenReturn(true);
+        mockStatic(FrameworkUtils.class);
+        when(FrameworkUtils.getApplicationName(any())).thenReturn(Optional.of(DUMMY_APP_NAME));
+        when(FrameworkUtils.getApplicationResourceId(any())).thenReturn(Optional.of(DUMMY_APP_RESOURCE_ID));
     }
 
     private void mockServiceURLBuilder() {

@@ -48,5 +48,23 @@ public abstract class MagicLinkAuthenticatorConstants {
     public static final String TEMPLATE_TYPE = "TEMPLATE_TYPE";
     public static final String EVENT_NAME = "magicLink";
     public static final String EXPIRYTIME = "expiry-time";
+
+    /**
+     * Constants related to log management.
+     */
+    public static class LogConstants {
+
+        public static final String MAGIC_LINK_AUTH_SERVICE = "local-auth-magiclink";
+
+        /**
+         * Define action IDs for diagnostic logs.
+         */
+        public static class ActionIDs {
+
+            public static final String SEND_MAGIC_LINK = "send-magiclink-token";
+            public static final String PROCESS_AUTHENTICATION_RESPONSE = "process-authentication-response";
+            public static final String VALIDATE_MAGIC_LINK_REQUEST = "validate-authentication-request";
+        }
+    }
 }
 
