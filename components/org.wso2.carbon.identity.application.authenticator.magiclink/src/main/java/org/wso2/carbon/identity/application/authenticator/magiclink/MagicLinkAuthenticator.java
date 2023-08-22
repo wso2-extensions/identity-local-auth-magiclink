@@ -163,8 +163,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                 response.sendRedirect(redirectUri);
                 if (LoggerUtils.isDiagnosticLogsEnabled() && finalDiagnosticLogBuilder != null) {
                     finalDiagnosticLogBuilder.resultMessage("Redirecting to identifier first flow since the last " +
-                                    "authenticated user is null.")
-                            .inputParam(LogConstants.InputKeys.REDIREDCT_URI, redirectUri);
+                                    "authenticated user is null.");
                     LoggerUtils.triggerDiagnosticLogEvent(finalDiagnosticLogBuilder);
                 }
             } catch (IOException e) {
@@ -202,8 +201,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                         .getAbsolutePublicURL();
                 response.sendRedirect(url);
                 if (LoggerUtils.isDiagnosticLogsEnabled() && finalDiagnosticLogBuilder != null) {
-                    finalDiagnosticLogBuilder.resultMessage("Redirecting to magic link notification page.")
-                            .inputParam(LogConstants.InputKeys.REDIREDCT_URI, url);
+                    finalDiagnosticLogBuilder.resultMessage("Redirecting to magic link notification page.");
                     LoggerUtils.triggerDiagnosticLogEvent(finalDiagnosticLogBuilder);
                 }
             } catch (IOException e) {
