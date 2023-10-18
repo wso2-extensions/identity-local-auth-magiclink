@@ -40,6 +40,8 @@ public abstract class MagicLinkAuthenticatorConstants {
     public static final String IDF_HANDLER_NAME = "IdentifierExecutor";
     public static final String LOCAL = "LOCAL";
     public static final String USER_NAME = "username";
+    public static final String USERNAME_PARAM = "username.param";
+    public static final String USER_PROMPT = "USER_PROMPT";
 
     // Default expiry time in seconds.
     public static final long DEFAULT_EXPIRY_TIME = 300;
