@@ -585,7 +585,7 @@ public class MagicLinkAuthenticatorTest {
         Assert.assertEquals(authenticatorDataObj.getAuthParams().size(), authenticatorParamMetadataList.size(),
                 "Size of lists should be equal.");
         Assert.assertEquals(authenticatorDataObj.getPromptType(),
-                MagicLinkAuthenticatorConstants.USER_PROMPT, "Prompt Type should match.");
+                FrameworkConstants.AuthenticatorPromptType.USER_PROMPT, "Prompt Type should match.");
         for (int i = 0; i < authenticatorParamMetadataList.size(); i++) {
             AuthenticatorParamMetadata expectedParam = authenticatorParamMetadataList.get(i);
             AuthenticatorParamMetadata actualParam = authenticatorDataObj.getAuthParams().get(i);
