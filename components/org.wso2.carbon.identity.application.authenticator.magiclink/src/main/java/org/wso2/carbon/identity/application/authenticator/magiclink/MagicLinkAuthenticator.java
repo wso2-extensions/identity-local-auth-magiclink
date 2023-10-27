@@ -78,6 +78,7 @@ import static org.wso2.carbon.identity.application.authenticator.magiclink.Magic
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.USERNAME_PARAM;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.USER_NAME;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.USER_PROMPT;
+import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.MLT;
 
 /**
  * Authenticator of MagicLink.
@@ -86,6 +87,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
 
     private static final long serialVersionUID = 4345354156955223654L;
     private static final Log log = LogFactory.getLog(MagicLinkAuthenticator.class);
+    public static final String REDIRECT_URL = "REDIRECT_URL";
     private AuthenticationContext authenticationContext;
 
     /**
@@ -120,6 +122,11 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         context.setCurrentAuthenticator(getName());
         context.setRetrying(false);
         return AuthenticatorFlowStatus.INCOMPLETE;
+    }
+
+    private boolean isAPIBasedAuthenticationFlow(HttpServletRequest request) {
+
+        return Boolean.TRUE.equals(request.getAttribute(FrameworkConstants.IS_API_BASED_AUTH_FLOW));
     }
 
     /**
@@ -372,6 +379,8 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         properties.put(MagicLinkAuthenticatorConstants.TEMPLATE_TYPE, MagicLinkAuthenticatorConstants.EVENT_NAME);
         properties.put(IdentityEventConstants.EventProperty.APPLICATION_NAME, context.getServiceProviderName());
         properties.put(MagicLinkAuthenticatorConstants.EXPIRYTIME, expiryTime);
+        properties.put(MagicLinkAuthenticatorConstants.IS_API_BASED_AUTHENTICATION_SUPPORTED, "true");
+        properties.put(MagicLinkAuthenticatorConstants.CALLBACK_URL, context.getProperty(REDIRECT_URL));
         Event identityMgtEvent = new Event(eventName, properties);
         DiagnosticLog.DiagnosticLogBuilder diagnosticLogBuilder = null;
         if (LoggerUtils.isDiagnosticLogsEnabled()) {
@@ -403,67 +412,14 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         }
     }
 
-    /**
-     * This method is responsible for validating whether the authenticator is supported for API Based Authentication.
-     *
-     * @return true if the authenticator is supported for API Based Authentication.
-     */
-    @Override
-    public boolean isAPIBasedAuthenticationSupported() {
-
-        return true;
-    }
-
-    /**
-     * This method is responsible for obtaining authenticator-specific data needed to
-     * initialize the authentication process within the provided authentication context.
-     *
-     * @param context The authentication context containing information about the current authentication attempt.
-     * @return An {@code Optional} containing an {@code AuthenticatorData} object representing the initiation data.
-     *         If the initiation data is available, it is encapsulated within the {@code Optional}; otherwise,
-     *         an empty {@code Optional} is returned.
-     */
-    @Override
-    public Optional<AuthenticatorData> getAuthInitiationData(AuthenticationContext context) {
-
-        String idpName = null;
-        if (context != null && context.getExternalIdP() != null) {
-            idpName = context.getExternalIdP().getIdPName();
-        }
-
-        AuthenticatorData authenticatorData = new AuthenticatorData();
-        authenticatorData.setName(getName());
-        authenticatorData.setIdp(idpName);
-        authenticatorData.setDisplayName(getFriendlyName());
-        setAdditionalData(authenticatorData);
-        if (isIdfInitiatedFromMagicLink()) {
-            setAuthParams(authenticatorData);
-        }
-
-        return Optional.of(authenticatorData);
-    }
-
     private void setAuthParams(AuthenticatorData authenticatorData) {
 
         List<AuthenticatorParamMetadata> authenticatorParamMetadataList = new ArrayList<>();
         AuthenticatorParamMetadata usernameMetadata = new AuthenticatorParamMetadata(
-                USER_NAME, FrameworkConstants.AuthenticatorParamType.STRING,
-                0, Boolean.FALSE, Boolean.TRUE, USERNAME_PARAM);
+                MagicLinkAuthenticatorConstants.USER_NAME, FrameworkConstants.AuthenticatorParamType.STRING,
+                0, Boolean.TRUE, MagicLinkAuthenticatorConstants.MAGIC_LINK_CODE);
         authenticatorParamMetadataList.add(usernameMetadata);
         authenticatorData.setAuthParams(authenticatorParamMetadataList);
-    }
-
-    private void setAdditionalData(AuthenticatorData authenticatorData) {
-
-        AdditionalData additionalData = new AdditionalData();
-        additionalData.setPromptType(USER_PROMPT);
-
-        if (isIdfInitiatedFromMagicLink()) {
-            List<String> requiredParams = new ArrayList<>();
-            requiredParams.add(MagicLinkAuthenticatorConstants.USER_NAME);
-            additionalData.setRequiredParams(requiredParams);
-        }
-        authenticatorData.setAdditionalData(additionalData);
     }
 
     private boolean isMagicTokenValid(MagicLinkAuthContextCacheEntry cacheEntry) {
@@ -631,5 +587,73 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                 return null;
             }
         });
+    }
+
+    /**
+     * This method is responsible for validating whether the authenticator is supported for API Based Authentication.
+     *
+     * @return true if the authenticator is supported for API Based Authentication.
+     */
+    @Override
+    public boolean isAPIBasedAuthenticationSupported() {
+
+        return true;
+    }
+
+    /**
+     * This method is responsible for obtaining authenticator-specific data needed to
+     * initialize the authentication process within the provided authentication context.
+     *
+     * @param context The authentication context containing information about the current authentication attempt.
+     * @return An {@code Optional} containing an {@code AuthenticatorData} object representing the initiation data.
+     *         If the initiation data is available, it is encapsulated within the {@code Optional}; otherwise,
+     *         an empty {@code Optional} is returned.
+     */
+    /**
+     * This method is responsible for obtaining authenticator-specific data needed to
+     * initialize the authentication process within the provided authentication context.
+     *
+     * @param context The authentication context containing information about the current authentication attempt.
+     * @return An {@code Optional} containing an {@code AuthenticatorData} object representing the initiation data.
+     *         If the initiation data is available, it is encapsulated within the {@code Optional}; otherwise,
+     *         an empty {@code Optional} is returned.
+     */
+    @Override
+    public Optional<AuthenticatorData> getAuthInitiationData(AuthenticationContext context) {
+
+        String idpName = null;
+        if (context != null && context.getExternalIdP() != null) {
+            idpName = context.getExternalIdP().getIdPName();
+        }
+
+        AuthenticatorData authenticatorData = new AuthenticatorData();
+        authenticatorData.setName(getName());
+        authenticatorData.setIdp(idpName);
+        authenticatorData.setDisplayName(getFriendlyName());
+        authenticatorData.setPromptType(FrameworkConstants.AuthenticatorPromptType.USER_PROMPT);
+
+        if (isIdfInitiatedFromMagicLink()) {
+            List<String> requiredParams = new ArrayList<>();
+            requiredParams.add(USER_NAME);
+            authenticatorData.setRequiredParams(requiredParams);
+            setAuthParamsForIdfInitiatedFromMagicLink(authenticatorData);
+        } else {
+            List<String> requiredParams = new ArrayList<>();
+            requiredParams.add(MLT);
+            authenticatorData.setRequiredParams(requiredParams);
+            setAuthParams(authenticatorData);
+        }
+
+        return Optional.of(authenticatorData);
+    }
+
+    private void setAuthParamsForIdfInitiatedFromMagicLink(AuthenticatorData authenticatorData) {
+
+        List<AuthenticatorParamMetadata> authenticatorParamMetadataList = new ArrayList<>();
+        AuthenticatorParamMetadata usernameMetadata = new AuthenticatorParamMetadata(
+              USER_NAME, FrameworkConstants.AuthenticatorParamType.STRING,
+                0, Boolean.FALSE, USERNAME_PARAM);
+        authenticatorParamMetadataList.add(usernameMetadata);
+        authenticatorData.setAuthParams(authenticatorParamMetadataList);
     }
 }

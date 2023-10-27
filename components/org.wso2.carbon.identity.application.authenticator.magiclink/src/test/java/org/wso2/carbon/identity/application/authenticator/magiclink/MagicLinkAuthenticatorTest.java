@@ -576,15 +576,15 @@ public class MagicLinkAuthenticatorTest {
 
         List<AuthenticatorParamMetadata> authenticatorParamMetadataList = new ArrayList<>();
         AuthenticatorParamMetadata usernameMetadata = new AuthenticatorParamMetadata(
-                USER_NAME, FrameworkConstants.AuthenticatorParamType.STRING,
-                0, Boolean.FALSE, Boolean.TRUE, USERNAME_PARAM);
+                MagicLinkAuthenticatorConstants.USER_NAME, FrameworkConstants.AuthenticatorParamType.STRING,
+                0, Boolean.FALSE, MagicLinkAuthenticatorConstants.USERNAME_PARAM);
         authenticatorParamMetadataList.add(usernameMetadata);
 
 
         Assert.assertEquals(authenticatorDataObj.getName(), MagicLinkAuthenticatorConstants.AUTHENTICATOR_NAME);
         Assert.assertEquals(authenticatorDataObj.getAuthParams().size(), authenticatorParamMetadataList.size(),
                 "Size of lists should be equal.");
-        Assert.assertEquals(authenticatorDataObj.getAdditionalDataObj().getPromptType(),
+        Assert.assertEquals(authenticatorDataObj.getPromptType(),
                 MagicLinkAuthenticatorConstants.USER_PROMPT, "Prompt Type should match.");
         for (int i = 0; i < authenticatorParamMetadataList.size(); i++) {
             AuthenticatorParamMetadata expectedParam = authenticatorParamMetadataList.get(i);

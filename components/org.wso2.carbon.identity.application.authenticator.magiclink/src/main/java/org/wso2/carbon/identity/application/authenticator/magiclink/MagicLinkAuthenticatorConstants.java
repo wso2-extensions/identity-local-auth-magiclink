@@ -29,6 +29,7 @@ public abstract class MagicLinkAuthenticatorConstants {
     }
 
     public static final String AUTHENTICATOR_NAME = "MagicLinkAuthenticator";
+    public static final String MLT = "mlt";
     public static final String AUTHENTICATOR_FRIENDLY_NAME = "Magic Link";
     public static final String MAGIC_LINK_NOTIFICATION_PAGE = "authenticationendpoint/magic_link_notification.do";
     public static final String MAGIC_LINK_TOKEN = "mlt";
@@ -41,6 +42,7 @@ public abstract class MagicLinkAuthenticatorConstants {
     public static final String LOCAL = "LOCAL";
     public static final String USER_NAME = "username";
     public static final String USERNAME_PARAM = "username.param";
+    public static final String MAGIC_LINK_CODE = "magic.link.code.param";
     public static final String USER_PROMPT = "USER_PROMPT";
 
     // Default expiry time in seconds.
@@ -50,6 +52,8 @@ public abstract class MagicLinkAuthenticatorConstants {
     public static final String TEMPLATE_TYPE = "TEMPLATE_TYPE";
     public static final String EVENT_NAME = "magicLink";
     public static final String EXPIRYTIME = "expiry-time";
+    public static final String IS_API_BASED_AUTHENTICATION_SUPPORTED = "isAPIBasedAuthenticationSupported";
+    public static final String CALLBACK_URL = "callbackUrl";
 
     /**
      * Constants related to log management.
