@@ -34,11 +34,16 @@ import org.testng.annotations.ObjectFactory;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.authentication.framework.AuthenticatorFlowStatus;
 import org.wso2.carbon.identity.application.authentication.framework.config.ConfigurationFacade;
+import org.wso2.carbon.identity.application.authentication.framework.config.model.ExternalIdPConfig;
 import org.wso2.carbon.identity.application.authentication.framework.context.AuthenticationContext;
 import org.wso2.carbon.identity.application.authentication.framework.exception.AuthenticationFailedException;
 import org.wso2.carbon.identity.application.authentication.framework.exception.InvalidCredentialsException;
 import org.wso2.carbon.identity.application.authentication.framework.internal.FrameworkServiceDataHolder;
+import org.wso2.carbon.identity.application.authentication.framework.model.AdditionalData;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
+import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatorData;
+import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatorParamMetadata;
+import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.application.authenticator.magiclink.cache.MagicLinkAuthContextCache;
 import org.wso2.carbon.identity.application.authenticator.magiclink.cache.MagicLinkAuthContextCacheEntry;
@@ -80,6 +85,8 @@ import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertThrows;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.USERNAME_CLAIM;
+import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.USERNAME_PARAM;
+import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.USER_NAME;
 
 @PrepareForTest({ TokenGenerator.class, IdentityUtil.class, ServiceURLBuilder.class, IdentityTenantUtil.class,
         AbstractUserStoreManager.class, MagicLinkAuthContextCache.class, MagicLinkServiceDataHolder.class,
@@ -128,6 +135,9 @@ public class MagicLinkAuthenticatorTest {
 
     @Mock
     private ConfigurationFacade mockConfigurationFacade;
+
+    @Mock
+    ExternalIdPConfig externalIdPConfig;
 
     private FrameworkServiceDataHolder frameworkServiceDataHolder;
 
@@ -543,5 +553,49 @@ public class MagicLinkAuthenticatorTest {
     public IObjectFactory getObjectFactory() {
 
         return new PowerMockObjectFactory();
+    }
+
+    @Test
+    public void testIsAPIBasedAuthenticationSupported() {
+
+        boolean isAPIBasedAuthenticationSupported = magicLinkAuthenticator.isAPIBasedAuthenticationSupported();
+        Assert.assertTrue(isAPIBasedAuthenticationSupported);
+    }
+
+    @Test
+    public void testGetAuthInitiationData() {
+
+        when(context.getExternalIdP()).thenReturn(externalIdPConfig);
+        when(context.getExternalIdP().getIdPName()).thenReturn(MagicLinkAuthenticatorConstants.LOCAL);
+        when(context.getProperty(MagicLinkAuthenticatorConstants.IS_IDF_INITIATED_FROM_AUTHENTICATOR))
+                .thenReturn(Boolean.TRUE);
+
+        Optional<AuthenticatorData> authenticatorData = magicLinkAuthenticator.getAuthInitiationData(context);
+        Assert.assertTrue(authenticatorData.isPresent());
+        AuthenticatorData authenticatorDataObj = authenticatorData.get();
+
+        List<AuthenticatorParamMetadata> authenticatorParamMetadataList = new ArrayList<>();
+        AuthenticatorParamMetadata usernameMetadata = new AuthenticatorParamMetadata(
+                MagicLinkAuthenticatorConstants.USER_NAME, FrameworkConstants.AuthenticatorParamType.STRING,
+                0, Boolean.FALSE, MagicLinkAuthenticatorConstants.USERNAME_PARAM);
+        authenticatorParamMetadataList.add(usernameMetadata);
+
+
+        Assert.assertEquals(authenticatorDataObj.getName(), MagicLinkAuthenticatorConstants.AUTHENTICATOR_NAME);
+        Assert.assertEquals(authenticatorDataObj.getAuthParams().size(), authenticatorParamMetadataList.size(),
+                "Size of lists should be equal.");
+        Assert.assertEquals(authenticatorDataObj.getPromptType(),
+                MagicLinkAuthenticatorConstants.USER_PROMPT, "Prompt Type should match.");
+        for (int i = 0; i < authenticatorParamMetadataList.size(); i++) {
+            AuthenticatorParamMetadata expectedParam = authenticatorParamMetadataList.get(i);
+            AuthenticatorParamMetadata actualParam = authenticatorDataObj.getAuthParams().get(i);
+
+            Assert.assertEquals(actualParam.getName(), expectedParam.getName(), "Parameter name should match.");
+            Assert.assertEquals(actualParam.getType(), expectedParam.getType(), "Parameter type should match.");
+            Assert.assertEquals(actualParam.getParamOrder(), expectedParam.getParamOrder(),
+                    "Parameter order should match.");
+            Assert.assertEquals(actualParam.isConfidential(), expectedParam.isConfidential(),
+                    "Parameter confidential status should match.");
+        }
     }
 }
