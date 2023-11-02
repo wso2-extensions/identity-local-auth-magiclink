@@ -416,7 +416,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
 
         List<AuthenticatorParamMetadata> authenticatorParamMetadataList = new ArrayList<>();
         AuthenticatorParamMetadata usernameMetadata = new AuthenticatorParamMetadata(
-                MagicLinkAuthenticatorConstants.USER_NAME, FrameworkConstants.AuthenticatorParamType.STRING,
+                MagicLinkAuthenticatorConstants.MAGIC_LINK_TOKEN, FrameworkConstants.AuthenticatorParamType.STRING,
                 0, Boolean.TRUE, MagicLinkAuthenticatorConstants.MAGIC_LINK_CODE);
         authenticatorParamMetadataList.add(usernameMetadata);
         authenticatorData.setAuthParams(authenticatorParamMetadataList);
