@@ -87,7 +87,8 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
 
     private static final long serialVersionUID = 4345354156955223654L;
     private static final Log log = LogFactory.getLog(MagicLinkAuthenticator.class);
-    public static final String REDIRECT_URL = "REDIRECT_URL";
+    private static final String REDIRECT_URL = "REDIRECT_URL";
+    private static final String IS_API_BASED = "IS_API_BASED";
     private AuthenticationContext authenticationContext;
 
     /**
@@ -379,7 +380,8 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         properties.put(MagicLinkAuthenticatorConstants.TEMPLATE_TYPE, MagicLinkAuthenticatorConstants.EVENT_NAME);
         properties.put(IdentityEventConstants.EventProperty.APPLICATION_NAME, context.getServiceProviderName());
         properties.put(MagicLinkAuthenticatorConstants.EXPIRYTIME, expiryTime);
-        properties.put(MagicLinkAuthenticatorConstants.IS_API_BASED_AUTHENTICATION_SUPPORTED, "true");
+        properties.put(MagicLinkAuthenticatorConstants.IS_API_BASED_AUTHENTICATION_SUPPORTED,
+                context.getProperty(IS_API_BASED));
         properties.put(MagicLinkAuthenticatorConstants.CALLBACK_URL, context.getProperty(REDIRECT_URL));
         Event identityMgtEvent = new Event(eventName, properties);
         DiagnosticLog.DiagnosticLogBuilder diagnosticLogBuilder = null;
