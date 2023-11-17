@@ -34,6 +34,7 @@ import org.wso2.carbon.identity.application.authentication.framework.exception.U
 import org.wso2.carbon.identity.application.authentication.framework.model.AdditionalData;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatorData;
+import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatorMessage;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatorParamMetadata;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
@@ -89,6 +90,8 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
     private static final Log log = LogFactory.getLog(MagicLinkAuthenticator.class);
     private static final String REDIRECT_URL = "REDIRECT_URL";
     private static final String IS_API_BASED = "IS_API_BASED";
+    private static final String AUTHENTICATOR_MESSAGE = "authenticatorMessage";
+    private static final String EMAIL_SENDING_FAILED = "emailSendingFailed";
     private AuthenticationContext authenticationContext;
 
     /**
@@ -405,6 +408,10 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             String errorMsg = String.format(
                     "Email notification sending failed for the user: %s in the tenant: %s", user.getUsername(),
                     user.getTenantDomain());
+            AuthenticatorMessage authenticatorMessage = new AuthenticatorMessage(FrameworkConstants.
+                    AuthenticatorMessageType.ERROR, EMAIL_SENDING_FAILED, errorMsg, null);
+            context.setProperty(AUTHENTICATOR_MESSAGE, authenticatorMessage);
+
             log.error(errorMsg);
             if (LoggerUtils.isDiagnosticLogsEnabled() && diagnosticLogBuilder != null) {
                 diagnosticLogBuilder.resultMessage("Failed to send magic link notification.")
@@ -476,11 +483,15 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         return blockedUserStoreDomainsList;
     }
 
-    private String validateIdentifierFromRequest(HttpServletRequest request)
+    private String validateIdentifierFromRequest(HttpServletRequest request, AuthenticationContext context)
             throws AuthenticationFailedException {
 
         String identifierFromRequest = request.getParameter(USER_NAME);
         if (StringUtils.isBlank(identifierFromRequest)) {
+            AuthenticatorMessage authenticatorMessage = new AuthenticatorMessage(FrameworkConstants.
+                    AuthenticatorMessageType.ERROR, MagicLinkAuthErrorConstants.ErrorMessages.EMPTY_USERNAME.getCode(),
+                    MagicLinkAuthErrorConstants.ErrorMessages.EMPTY_USERNAME.getCode(), null);
+            context.setProperty(AUTHENTICATOR_MESSAGE, authenticatorMessage);
             throw new InvalidCredentialsException(MagicLinkAuthErrorConstants.ErrorMessages.EMPTY_USERNAME.getCode(),
                     MagicLinkAuthErrorConstants.ErrorMessages.EMPTY_USERNAME.getMessage());
         }
@@ -498,7 +509,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
     private User resolveUser(HttpServletRequest request, AuthenticationContext context)
             throws AuthenticationFailedException {
 
-        String username = validateIdentifierFromRequest(request);
+        String username = validateIdentifierFromRequest(request, context);
         validateEmailUsername(username, context);
         username = FrameworkUtils.preprocessUsername(username, context);
         User user = new User();
@@ -633,7 +644,9 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         authenticatorData.setIdp(idpName);
         authenticatorData.setDisplayName(getFriendlyName());
         authenticatorData.setPromptType(FrameworkConstants.AuthenticatorPromptType.USER_PROMPT);
-
+        if (context.getProperty(AUTHENTICATOR_MESSAGE) != null) {
+            authenticatorData.setMessage((AuthenticatorMessage) context.getProperty(AUTHENTICATOR_MESSAGE));
+        }
         if (isIdfInitiatedFromMagicLink()) {
             List<String> requiredParams = new ArrayList<>();
             requiredParams.add(USER_NAME);
