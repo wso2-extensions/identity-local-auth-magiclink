@@ -33,6 +33,7 @@ public abstract class MagicLinkAuthenticatorConstants {
     public static final String AUTHENTICATOR_FRIENDLY_NAME = "Magic Link";
     public static final String MAGIC_LINK_NOTIFICATION_PAGE = "authenticationendpoint/magic_link_notification.do";
     public static final String MAGIC_LINK_TOKEN = "mlt";
+    public static final String DISPLAY_MAGIC_LINK_TOKEN = "Magic Link Token";
     public static final String EXPIRY_TIME = "ExpiryTime";
     public static final String BLOCKED_USERSTORE_DOMAINS_LIST = "BlockedUserStoreDomains";
     public static final String BLOCKED_USERSTORE_DOMAINS_SEPARATOR = ",";
@@ -41,6 +42,7 @@ public abstract class MagicLinkAuthenticatorConstants {
     public static final String IDF_HANDLER_NAME = "IdentifierExecutor";
     public static final String LOCAL = "LOCAL";
     public static final String USER_NAME = "username";
+    public static final String DISPLAY_USER_NAME = "Username";
     public static final String USERNAME_PARAM = "username.param";
     public static final String MAGIC_LINK_CODE = "magic.link.code.param";
     public static final String USER_PROMPT = "USER_PROMPT";
