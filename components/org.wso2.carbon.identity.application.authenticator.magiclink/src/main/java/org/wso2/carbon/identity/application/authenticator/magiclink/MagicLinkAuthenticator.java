@@ -71,11 +71,14 @@ import static org.wso2.carbon.identity.application.authentication.framework.util
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.BLOCKED_USERSTORE_DOMAINS_LIST;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.BLOCKED_USERSTORE_DOMAINS_SEPARATOR;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.DEFAULT_EXPIRY_TIME;
+import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.DISPLAY_MAGIC_LINK_TOKEN;
+import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.DISPLAY_USER_NAME;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.EXPIRY_TIME;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.LogConstants.ActionIDs.PROCESS_AUTHENTICATION_RESPONSE;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.LogConstants.ActionIDs.SEND_MAGIC_LINK;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.LogConstants.ActionIDs.VALIDATE_MAGIC_LINK_REQUEST;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.LogConstants.MAGIC_LINK_AUTH_SERVICE;
+import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.MAGIC_LINK_TOKEN;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.USERNAME_PARAM;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.USER_NAME;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.USER_PROMPT;
@@ -253,10 +256,10 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                     .inputParams(getApplicationDetails(context));
             LoggerUtils.triggerDiagnosticLogEvent(diagnosticLogBuilder);
         }
-        if (StringUtils.isEmpty(request.getParameter(MagicLinkAuthenticatorConstants.MAGIC_LINK_TOKEN))) {
+        if (StringUtils.isEmpty(request.getParameter(MAGIC_LINK_TOKEN))) {
             throw new InvalidCredentialsException("MagicToken cannot be null.");
         } else {
-            String magicToken = request.getParameter(MagicLinkAuthenticatorConstants.MAGIC_LINK_TOKEN);
+            String magicToken = request.getParameter(MAGIC_LINK_TOKEN);
             MagicLinkAuthContextCacheKey magicLinkAuthContextCacheKey = new MagicLinkAuthContextCacheKey(magicToken);
             MagicLinkAuthContextCacheEntry magicLinkAuthContextCacheEntry = MagicLinkAuthContextCache.getInstance()
                     .getValueFromCache(magicLinkAuthContextCacheKey);
@@ -330,7 +333,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             return canHandle;
         }
         boolean canHandle = StringUtils.isNotEmpty(httpServletRequest.getParameter(
-                MagicLinkAuthenticatorConstants.MAGIC_LINK_TOKEN));
+                MAGIC_LINK_TOKEN));
         if (LoggerUtils.isDiagnosticLogsEnabled() && diagnosticLogBuilder != null && canHandle) {
             diagnosticLogBuilder.resultMessage("Magic link authenticator is handling the authentication.");
             LoggerUtils.triggerDiagnosticLogEvent(diagnosticLogBuilder);
@@ -341,7 +344,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
     @Override
     public String getContextIdentifier(HttpServletRequest request) {
 
-        String magicToken = request.getParameter(MagicLinkAuthenticatorConstants.MAGIC_LINK_TOKEN);
+        String magicToken = request.getParameter(MAGIC_LINK_TOKEN);
 
         if (StringUtils.isEmpty(magicToken)) {
             return null;
@@ -424,8 +427,8 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
     private void setAuthParams(AuthenticatorData authenticatorData) {
 
         List<AuthenticatorParamMetadata> authenticatorParamMetadataList = new ArrayList<>();
-        AuthenticatorParamMetadata usernameMetadata = new AuthenticatorParamMetadata(
-                MagicLinkAuthenticatorConstants.MAGIC_LINK_TOKEN, FrameworkConstants.AuthenticatorParamType.STRING,
+        AuthenticatorParamMetadata usernameMetadata = new AuthenticatorParamMetadata(MAGIC_LINK_TOKEN,
+                DISPLAY_MAGIC_LINK_TOKEN, FrameworkConstants.AuthenticatorParamType.STRING,
                 0, Boolean.TRUE, MagicLinkAuthenticatorConstants.MAGIC_LINK_CODE);
         authenticatorParamMetadataList.add(usernameMetadata);
         authenticatorData.setAuthParams(authenticatorParamMetadataList);
@@ -666,7 +669,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
 
         List<AuthenticatorParamMetadata> authenticatorParamMetadataList = new ArrayList<>();
         AuthenticatorParamMetadata usernameMetadata = new AuthenticatorParamMetadata(
-              USER_NAME, FrameworkConstants.AuthenticatorParamType.STRING,
+                USER_NAME, DISPLAY_USER_NAME, FrameworkConstants.AuthenticatorParamType.STRING,
                 0, Boolean.FALSE, USERNAME_PARAM);
         authenticatorParamMetadataList.add(usernameMetadata);
         authenticatorData.setAuthParams(authenticatorParamMetadataList);
