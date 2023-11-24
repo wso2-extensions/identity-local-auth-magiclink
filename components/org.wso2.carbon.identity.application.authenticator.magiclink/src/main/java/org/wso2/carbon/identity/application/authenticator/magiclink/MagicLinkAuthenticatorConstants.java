@@ -56,6 +56,7 @@ public abstract class MagicLinkAuthenticatorConstants {
     public static final String EXPIRYTIME = "expiry-time";
     public static final String IS_API_BASED_AUTHENTICATION_SUPPORTED = "isAPIBasedAuthenticationSupported";
     public static final String CALLBACK_URL = "callbackUrl";
+    public static final String MULTI_OPTION_QUERY_PARAM = "multiOptionURI";
 
     /**
      * Constants related to log management.
