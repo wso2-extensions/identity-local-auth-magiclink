@@ -377,6 +377,12 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         return MagicLinkAuthenticatorConstants.AUTHENTICATOR_NAME;
     }
 
+    @Override
+    public String getI18nKey() {
+
+        return MagicLinkAuthenticatorConstants.AUTHENTICATOR_MAGIC_LINK;
+    }
+
     /**
      * Method to Trigger the Magic Link event.
      *
