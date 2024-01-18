@@ -59,6 +59,7 @@ public abstract class MagicLinkAuthenticatorConstants {
     public static final String CALLBACK_URL = "callbackUrl";
     public static final String STATE_PARAM_SUFFIX = "_state_param";
     public static final String STATE_PARAM = "state";
+    public static final String MULTI_OPTION_QUERY_PARAM = "multiOptionURI";
 
     /**
      * Constants related to log management.

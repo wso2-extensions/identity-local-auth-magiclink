@@ -97,6 +97,11 @@
                 <artifactId>org.wso2.carbon.identity.auth.attribute.handler</artifactId>
                 <version>${identity.governance.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.wso2.orbit.org.owasp.encoder</groupId>
+                <artifactId>encoder</artifactId>
+                <version>${owasp.encoder.version}</version>
+            </dependency>
 
             <!--Test Dependencies-->
             <dependency>
@@ -222,6 +227,7 @@
         <identity.governance.version>1.8.23</identity.governance.version>
         <org.wso2.carbon.identity.organization.management.core.version>1.0.55
         </org.wso2.carbon.identity.organization.management.core.version>
+        <owasp.encoder.version>1.2.0.wso2v1</owasp.encoder.version>
 
         <!--Test Dependencies-->
         <testng.version>6.9.10</testng.version>
@@ -241,6 +247,7 @@
         <carbon.kernel.imp.pkg.version.range>[4.5.0, 5.0.0)</carbon.kernel.imp.pkg.version.range>
         <carbon.user.api.imp.pkg.version.range>[1.0.1, 2.0.0)</carbon.user.api.imp.pkg.version.range>
         <identity.governance.imp.pkg.version.range>[1.5.0, 3.0.0)</identity.governance.imp.pkg.version.range>
+        <encoder.wso2.import.version.range>[1.2.0, 2.0.0)</encoder.wso2.import.version.range>
 
         <findbugs-maven-plugin.version>3.0.5</findbugs-maven-plugin.version>
         <maven.bundle.plugin.version>3.2.0</maven.bundle.plugin.version>

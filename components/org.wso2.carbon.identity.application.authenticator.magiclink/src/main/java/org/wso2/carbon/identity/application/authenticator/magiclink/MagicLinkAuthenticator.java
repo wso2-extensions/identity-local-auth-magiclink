@@ -22,6 +22,7 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.owasp.encoder.Encode;
 import org.wso2.carbon.identity.application.authentication.framework.AbstractApplicationAuthenticator;
 import org.wso2.carbon.identity.application.authentication.framework.AuthenticatorFlowStatus;
 import org.wso2.carbon.identity.application.authentication.framework.LocalApplicationAuthenticator;
@@ -80,9 +81,9 @@ import static org.wso2.carbon.identity.application.authenticator.magiclink.Magic
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.LogConstants.ActionIDs.VALIDATE_MAGIC_LINK_REQUEST;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.LogConstants.MAGIC_LINK_AUTH_SERVICE;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.MAGIC_LINK_TOKEN;
+import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.MULTI_OPTION_QUERY_PARAM;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.USERNAME_PARAM;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.USER_NAME;
-import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.USER_PROMPT;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.MLT;
 
 /**
@@ -172,6 +173,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             context.setProperty(MagicLinkAuthenticatorConstants.IS_IDF_INITIATED_FROM_AUTHENTICATOR, true);
             String loginPage = ConfigurationFacade.getInstance().getAuthenticationEndpointURL();
             String queryParams = context.getContextIdIncludedQueryParams();
+            String multiOptionURI = getMultiOptionURIQueryParam(request);
             try {
                 if (log.isDebugEnabled()) {
                     String logMsg = String.format("Redirecting to identifier first flow since " +
@@ -180,7 +182,8 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                     log.debug(logMsg);
                 }
                 String redirectUri = loginPage + ("?" + queryParams) + MagicLinkAuthenticatorConstants.AUTHENTICATORS +
-                        MagicLinkAuthenticatorConstants.IDF_HANDLER_NAME + ":" + MagicLinkAuthenticatorConstants.LOCAL;
+                        MagicLinkAuthenticatorConstants.IDF_HANDLER_NAME + ":" + MagicLinkAuthenticatorConstants.LOCAL
+                        + multiOptionURI;
                 response.sendRedirect(redirectUri);
                 if (LoggerUtils.isDiagnosticLogsEnabled() && finalDiagnosticLogBuilder != null) {
                     finalDiagnosticLogBuilder.resultMessage("Redirecting to identifier first flow since the last " +
@@ -696,5 +699,21 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                 0, Boolean.FALSE, USERNAME_PARAM);
         authenticatorParamMetadataList.add(usernameMetadata);
         authenticatorData.setAuthParams(authenticatorParamMetadataList);
+    }
+
+    /**
+     * Get the multi option URI query params.
+     *
+     * @param request HttpServletRequest.
+     */
+    private static String getMultiOptionURIQueryParam(HttpServletRequest request) {
+
+        String multiOptionURI = "";
+        if (request != null) {
+            multiOptionURI = request.getParameter(MULTI_OPTION_QUERY_PARAM);
+            multiOptionURI = multiOptionURI != null ? "&" + MULTI_OPTION_QUERY_PARAM + "=" +
+                    Encode.forUriComponent(multiOptionURI) : "";
+        }
+        return multiOptionURI;
     }
 }
