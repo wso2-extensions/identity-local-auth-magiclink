@@ -114,7 +114,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             LogoutFailedException {
 
         this.authenticationContext = context;
-        if (!isIdfInitiatedFromMagicLink()) {
+        if (!isIdfInitiatedFromMagicLink() || !isUsernameAvailableInRequest(request)) {
             return super.process(request, response, authenticationContext);
         }
         if (context.isLogoutRequest()) {
@@ -515,6 +515,11 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                     MagicLinkAuthErrorConstants.ErrorMessages.EMPTY_USERNAME.getMessage());
         }
         return identifierFromRequest;
+    }
+
+    private boolean isUsernameAvailableInRequest(HttpServletRequest request) {
+
+        return StringUtils.isNotBlank(request.getParameter(USER_NAME));
     }
 
     /**
