@@ -65,6 +65,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.RequestParams.RESTART_FLOW;
@@ -214,6 +215,15 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                 if (StringUtils.isNotEmpty(magicToken)) {
                     String expiryTime =
                             TimeUnit.SECONDS.toMinutes(getExpiryTime()) + " " + TimeUnit.MINUTES.name().toLowerCase();
+                    if (Boolean.parseBoolean((String) context.getProperty(IS_API_BASED))) {
+                        /* Setting a state param to the request for the client to be able to correlate the
+                        magic link coming to the app in API based authentication flow. The code is written in
+                        this manner as it is not possible to dynamically set params to the email template. */
+                        String state = UUID.randomUUID().toString();
+                        context.setProperty(MagicLinkAuthenticatorConstants.AUTHENTICATOR_NAME +
+                                MagicLinkAuthenticatorConstants.STATE_PARAM_SUFFIX, state);
+                        magicToken = magicToken + "&" + MagicLinkAuthenticatorConstants.STATE_PARAM + "=" + state;
+                    }
                     triggerEvent(user, context, magicToken, expiryTime);
                 }
             }
@@ -367,6 +377,12 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
     public String getName() {
 
         return MagicLinkAuthenticatorConstants.AUTHENTICATOR_NAME;
+    }
+
+    @Override
+    public String getI18nKey() {
+
+        return MagicLinkAuthenticatorConstants.AUTHENTICATOR_MAGIC_LINK;
     }
 
     /**
@@ -662,6 +678,13 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
             requiredParams.add(MLT);
             authenticatorData.setRequiredParams(requiredParams);
             setAuthParams(authenticatorData);
+            Map<String, String> additionalAuthenticationParams = new HashMap<>();
+            String state = (String) context.getProperty(MagicLinkAuthenticatorConstants.AUTHENTICATOR_NAME +
+                    MagicLinkAuthenticatorConstants.STATE_PARAM_SUFFIX);
+            additionalAuthenticationParams.put(MagicLinkAuthenticatorConstants.STATE_PARAM, state);
+            AdditionalData additionalData = new AdditionalData();
+            additionalData.setAdditionalAuthenticationParams(additionalAuthenticationParams);
+            authenticatorData.setAdditionalData(additionalData);
         }
 
         return Optional.of(authenticatorData);

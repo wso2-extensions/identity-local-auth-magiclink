@@ -29,6 +29,7 @@ public abstract class MagicLinkAuthenticatorConstants {
     }
 
     public static final String AUTHENTICATOR_NAME = "MagicLinkAuthenticator";
+    public static final String AUTHENTICATOR_MAGIC_LINK = "authenticator.magic.link";
     public static final String MLT = "mlt";
     public static final String AUTHENTICATOR_FRIENDLY_NAME = "Magic Link";
     public static final String MAGIC_LINK_NOTIFICATION_PAGE = "authenticationendpoint/magic_link_notification.do";
@@ -56,6 +57,8 @@ public abstract class MagicLinkAuthenticatorConstants {
     public static final String EXPIRYTIME = "expiry-time";
     public static final String IS_API_BASED_AUTHENTICATION_SUPPORTED = "isAPIBasedAuthenticationSupported";
     public static final String CALLBACK_URL = "callbackUrl";
+    public static final String STATE_PARAM_SUFFIX = "_state_param";
+    public static final String STATE_PARAM = "state";
     public static final String MULTI_OPTION_QUERY_PARAM = "multiOptionURI";
 
     /**
