@@ -93,7 +93,7 @@ import static org.wso2.carbon.identity.application.authenticator.magiclink.Magic
         AbstractUserStoreManager.class, MagicLinkAuthContextCache.class, MagicLinkServiceDataHolder.class,
         ConfigurationFacade.class, FrameworkUtils.class, MultitenantUtils.class, UserCoreUtil.class,
         FrameworkServiceDataHolder.class, LoggerUtils.class })
-@PowerMockIgnore({ "javax.net.*", "javax.security.*", "javax.crypto.*", "javax.xml.*" })
+@PowerMockIgnore({ "javax.net.*", "javax.security.*", "javax.crypto.*", "javax.xml.*", "jdk.internal.reflect.*" })
 public class MagicLinkAuthenticatorTest {
 
     private static final String USER_STORE_DOMAIN = "PRIMARY";
