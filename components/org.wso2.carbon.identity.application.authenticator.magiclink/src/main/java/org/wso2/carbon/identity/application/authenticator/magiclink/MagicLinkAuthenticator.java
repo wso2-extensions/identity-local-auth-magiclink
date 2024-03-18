@@ -199,7 +199,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                         e.getMessage(), user, e);
             }
         } else {
-            User user = getUser(context.getLastAuthenticatedUser());
+            User user = getUser(context.getLastAuthenticatedUser(), context);
             if (user != null) {
                 MagicLinkAuthContextData magicLinkAuthContextData = new MagicLinkAuthContextData();
                 String magicToken = TokenGenerator.generateToken(MagicLinkAuthenticatorConstants.TOKEN_LENGTH);
