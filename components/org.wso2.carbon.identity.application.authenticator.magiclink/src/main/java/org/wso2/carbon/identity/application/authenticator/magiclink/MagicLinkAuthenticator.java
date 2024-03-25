@@ -710,6 +710,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
      * Get the multi option URI query params.
      *
      * @param request HttpServletRequest.
+     * @return multiOptionURI query parameter value.
      */
     private static String getMultiOptionURIQueryParam(HttpServletRequest request) {
 
