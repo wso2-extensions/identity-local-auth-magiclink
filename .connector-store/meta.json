@@ -1,0 +1,10 @@
+{
+    "name": "Magic Link Authenticator",
+    "owner": "WSO2",
+    "category": "Local authenticator",
+    "documentationUrl": "https://github.com/wso2-extensions/identity-local-auth-magiclink/blob/v0.0.3/README.md",
+    "description": "",
+    "status": "Active",
+    "labels": [],
+    "releases": []
+}
