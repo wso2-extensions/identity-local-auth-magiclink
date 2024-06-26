@@ -33,6 +33,7 @@ public abstract class MagicLinkAuthenticatorConstants {
     public static final String MLT = "mlt";
     public static final String AUTHENTICATOR_FRIENDLY_NAME = "Magic Link";
     public static final String MAGIC_LINK_NOTIFICATION_PAGE = "authenticationendpoint/magic_link_notification.do";
+    public static final String MAGIC_LINK_AUTHENTICATION_ENDPOINT_URL = "MagicLinkAuthenticationEndpointURL";
     public static final String MAGIC_LINK_TOKEN = "mlt";
     public static final String DISPLAY_MAGIC_LINK_TOKEN = "Magic Link Token";
     public static final String EXPIRY_TIME = "ExpiryTime";
