@@ -229,8 +229,9 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                 }
             }
             try {
+                String endpointUrl = getAuthenticationEndpointUrl();
                 String url = ServiceURLBuilder.create()
-                        .addPath(MagicLinkAuthenticatorConstants.MAGIC_LINK_NOTIFICATION_PAGE).build()
+                        .addPath(endpointUrl).build()
                         .getAbsolutePublicURL();
                 response.sendRedirect(url);
                 if (LoggerUtils.isDiagnosticLogsEnabled() && finalDiagnosticLogBuilder != null) {
@@ -245,6 +246,16 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                         "Error while building the magic link notification page URL.", e);
             }
         }
+    }
+
+    private String getAuthenticationEndpointUrl() {
+
+        String endPointUrl =  getAuthenticatorConfig().getParameterMap().get(
+                MagicLinkAuthenticatorConstants.MAGIC_LINK_AUTHENTICATION_ENDPOINT_URL);
+        if (StringUtils.isBlank(endPointUrl)) {
+            return MagicLinkAuthenticatorConstants.MAGIC_LINK_NOTIFICATION_PAGE;
+        }
+        return endPointUrl;
     }
 
     /**
