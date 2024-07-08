@@ -6,5 +6,12 @@
     "description": "",
     "status": "Active",
     "labels": [],
-    "releases": []
+    "releases": [
+        {
+            "tagName": "0.0.3",
+            "products": [
+                "IS 5.11.0"
+            ]
+        }
+    ]
 }
