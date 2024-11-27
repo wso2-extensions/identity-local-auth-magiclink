@@ -35,6 +35,11 @@
             <groupId>org.wso2.carbon.identity.local.auth.magiclink</groupId>
             <artifactId>org.wso2.carbon.identity.application.authenticator.magiclink</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.jacoco</groupId>
+            <artifactId>jacoco-maven-plugin</artifactId>
+            <version>${jacoco.version}</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -61,6 +66,25 @@
                                 <bundleDef>org.wso2.carbon.identity.local.auth.magiclink:org.wso2.carbon.identity.application.authenticator.magiclink</bundleDef>
                             </bundles>
                         </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>
