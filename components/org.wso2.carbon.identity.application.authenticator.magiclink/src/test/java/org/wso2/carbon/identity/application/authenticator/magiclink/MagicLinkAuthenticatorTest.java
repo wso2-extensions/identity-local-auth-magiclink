@@ -153,7 +153,6 @@ public class MagicLinkAuthenticatorTest {
         mockStatic(FrameworkUtils.class);
         mockStatic(MultitenantUtils.class);
         mockUserStoreManager = mock(AbstractUserStoreManager.class);
-        Whitebox.setInternalState(magicLinkAuthenticator, "authenticationContext", context);
         frameworkServiceDataHolder = mock(FrameworkServiceDataHolder.class);
         mockStatic(FrameworkServiceDataHolder.class);
         mockStatic(LoggerUtils.class);
@@ -239,7 +238,6 @@ public class MagicLinkAuthenticatorTest {
     @Test(description = "Test case for canHandle() method identifier first flow.", dataProvider = "getCanHandleDataIdf")
     public void testCanHandleIdfFlow(String username, boolean canHandle) {
 
-        when(context.getProperty(MagicLinkAuthenticatorConstants.IS_IDF_INITIATED_FROM_AUTHENTICATOR)).thenReturn(true);
         when(httpServletRequest.getParameter(MagicLinkAuthenticatorConstants.USER_NAME)).thenReturn(username);
         Assert.assertEquals(magicLinkAuthenticator.canHandle(httpServletRequest), canHandle);
     }
