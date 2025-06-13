@@ -29,9 +29,11 @@ import org.osgi.service.component.annotations.ReferencePolicy;
 import org.wso2.carbon.identity.application.authentication.framework.ApplicationAuthenticator;
 import org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticator;
 import org.wso2.carbon.identity.application.authenticator.magiclink.attribute.handler.MagicLinkAuthAttributeHandler;
+import org.wso2.carbon.identity.application.authenticator.magiclink.executor.MagicLinkExecutor;
 import org.wso2.carbon.identity.auth.attribute.handler.AuthAttributeHandler;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
+import org.wso2.carbon.identity.flow.execution.engine.graph.Executor;
 import org.wso2.carbon.user.core.service.RealmService;
 
 /**
@@ -53,6 +55,7 @@ public class MagicLinkAuthenticatorServiceComponent {
 
             MagicLinkAuthAttributeHandler authAttributeHandler = new MagicLinkAuthAttributeHandler();
             ctxt.getBundleContext().registerService(AuthAttributeHandler.class.getName(), authAttributeHandler, null);
+            ctxt.getBundleContext().registerService(Executor.class.getName(), new MagicLinkExecutor(), null);
             if (log.isDebugEnabled()) {
                 log.info("MagicLink Authenticator bundle is activated");
             }
