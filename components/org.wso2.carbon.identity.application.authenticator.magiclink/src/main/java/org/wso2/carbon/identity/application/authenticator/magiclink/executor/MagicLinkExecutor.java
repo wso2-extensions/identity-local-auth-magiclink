@@ -128,15 +128,14 @@ public class MagicLinkExecutor implements Executor {
         String expiryTime =
                 TimeUnit.SECONDS.toMinutes(getExpiryTime()) + " " + TimeUnit.MINUTES.name().toLowerCase();
         magicToken = magicToken + "&" + "flowId=" + context.getContextIdentifier();
-        context.getUserInputData().put(MLT, magicToken);
         triggerEvent(context, user, magicToken, expiryTime, context.getPortalUrl());
-        return clientInputRequiredResponse(response, MLT);
+        return userInputRequiredResponse(response, MLT);
     }
 
     private ExecutorResponse processMagicLink(FlowExecutionContext context, ExecutorResponse response) {
 
         String magicToken = context.getUserInputData().get(MLT);
-        if (magicToken == null || magicToken.isEmpty()) {
+        if (StringUtils.isBlank(magicToken)) {
             return userErrorResponse(response, "Magic Link token is required for verification.");
         }
 
@@ -224,7 +223,7 @@ public class MagicLinkExecutor implements Executor {
 
     private void validateRequiredData(FlowExecutionContext context) throws FlowEngineException {
 
-        if (context.getFlowUser().getUsername() == null) {
+        if (StringUtils.isBlank(context.getFlowUser().getUsername())) {
             throw new FlowEngineClientException("Username is required for Magic Link registration.");
         }
         if (context.getFlowUser().getClaim(EMAIL_ADDRESS_CLAIM) == null) {
@@ -232,9 +231,9 @@ public class MagicLinkExecutor implements Executor {
         }
     }
 
-    private ExecutorResponse clientInputRequiredResponse(ExecutorResponse response, String... fields) {
+    private ExecutorResponse userInputRequiredResponse(ExecutorResponse response, String... fields) {
 
-        response.setResult(Constants.ExecutorStatus.STATUS_CLIENT_INPUT_REQUIRED);
+        response.setResult(Constants.ExecutorStatus.STATUS_USER_INPUT_REQUIRED);
         response.setRequiredData(Arrays.asList(fields));
         return response;
     }
@@ -275,9 +274,11 @@ public class MagicLinkExecutor implements Executor {
         if (authConfig == null) {
             authConfig = new AuthenticatorConfig();
             authConfig.setParameterMap(new HashMap<>());
+            return DEFAULT_EXPIRY_TIME;
         }
-        if (StringUtils.isNotBlank(authConfig.getParameterMap().get(EXPIRY_TIME))) {
-            return Long.parseLong(authConfig.getParameterMap().get(EXPIRY_TIME));
+        String expiryTime = authConfig.getParameterMap().get(EXPIRY_TIME);
+        if (StringUtils.isNotBlank(expiryTime)) {
+            return Long.parseLong(expiryTime);
         }
         return DEFAULT_EXPIRY_TIME;
     }

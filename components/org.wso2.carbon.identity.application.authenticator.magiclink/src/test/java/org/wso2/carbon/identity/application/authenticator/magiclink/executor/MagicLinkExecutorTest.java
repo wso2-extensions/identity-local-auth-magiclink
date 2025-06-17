@@ -149,7 +149,7 @@ public class MagicLinkExecutorTest extends PowerMockTestCase {
 
         prepareInitiationContext();
         ExecutorResponse response = executor.execute(context);
-        assertEquals(response.getResult(), Constants.ExecutorStatus.STATUS_CLIENT_INPUT_REQUIRED);
+        assertEquals(response.getResult(), Constants.ExecutorStatus.STATUS_USER_INPUT_REQUIRED);
         assertTrue(response.getRequiredData().contains(MagicLinkExecutor.MLT));
     }
 
@@ -159,7 +159,7 @@ public class MagicLinkExecutorTest extends PowerMockTestCase {
         prepareInitiationContext();
         doThrow(new IdentityEventException("error")).when(eventService).handleEvent(any(Event.class));
         ExecutorResponse response = executor.execute(context);
-        assertEquals(response.getResult(), Constants.ExecutorStatus.STATUS_CLIENT_INPUT_REQUIRED);
+        assertEquals(response.getResult(), Constants.ExecutorStatus.STATUS_USER_INPUT_REQUIRED);
     }
 
     @Test
