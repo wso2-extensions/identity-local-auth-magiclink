@@ -66,6 +66,8 @@ public class MagicLinkExecutor implements Executor {
     private static final Log LOG = LogFactory.getLog(MagicLinkExecutor.class);
     public static final String MLT = "mlt";
     public static final String PORTAL_URL = "portalUrl";
+    public static final String MAGIC_LINK_SIGN_UP_TEMPLATE = "magicLinkSignUp";
+    public static final String MAGIC_LINK_PASSWORD_RECOVERY_TEMPLATE = "magicLinkPasswordRecovery";
 
     @Override
     public String getName() {
@@ -292,11 +294,12 @@ public class MagicLinkExecutor implements Executor {
      * @param properties The properties map to set the template type.
      */
     private void setMagicLinkTemplateType(FlowExecutionContext context, Map<String, Object> properties) {
+
         String flowType = context.getFlowType();
         if (REGISTRATION.name().equals(flowType)) {
-            properties.put(MagicLinkAuthenticatorConstants.TEMPLATE_TYPE, "magicLinkSignUp");
+            properties.put(MagicLinkAuthenticatorConstants.TEMPLATE_TYPE, MAGIC_LINK_SIGN_UP_TEMPLATE);
         } else if (PASSWORD_RECOVERY.name().equals(flowType)) {
-            properties.put(MagicLinkAuthenticatorConstants.TEMPLATE_TYPE, "magicLinkPasswordRecovery");
+            properties.put(MagicLinkAuthenticatorConstants.TEMPLATE_TYPE, MAGIC_LINK_PASSWORD_RECOVERY_TEMPLATE);
         }
     }
 }

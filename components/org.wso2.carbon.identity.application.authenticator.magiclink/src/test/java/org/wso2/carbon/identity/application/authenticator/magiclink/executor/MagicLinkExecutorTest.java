@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.application.authenticator.magiclink.executor;
 
+import org.mockito.ArgumentCaptor;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -50,6 +51,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
@@ -57,6 +59,10 @@ import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.EMAIL_ADDRESS_CLAIM;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.USERNAME_CLAIM;
+import static org.wso2.carbon.identity.application.authenticator.magiclink.executor.MagicLinkExecutor.MAGIC_LINK_PASSWORD_RECOVERY_TEMPLATE;
+import static org.wso2.carbon.identity.application.authenticator.magiclink.executor.MagicLinkExecutor.MAGIC_LINK_SIGN_UP_TEMPLATE;
+import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.PASSWORD_RECOVERY;
+import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.REGISTRATION;
 
 /**
  * Unit tests for the MagicLinkExecutor class.
@@ -201,6 +207,44 @@ public class MagicLinkExecutorTest extends PowerMockTestCase {
     public void testRollbackReturnsNull() throws Exception {
 
         assertNull(executor.rollback(context));
+    }
+
+    @Test
+    public void testSetMagicLinkTemplateTypeForRegistrationFlow() throws Exception {
+
+        prepareInitiationContext();
+        when(context.getFlowType()).thenReturn(REGISTRATION.name());
+        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+        executor.execute(context);
+        verify(eventService).handleEvent(eventCaptor.capture());
+        Event capturedEvent = eventCaptor.getValue();
+        assertEquals(capturedEvent.getEventProperties().get(MagicLinkAuthenticatorConstants.TEMPLATE_TYPE),
+                MAGIC_LINK_SIGN_UP_TEMPLATE);
+    }
+
+    @Test
+    public void testSetMagicLinkTemplateTypeForPasswordRecoveryFlow() throws Exception {
+
+        prepareInitiationContext();
+        when(context.getFlowType()).thenReturn(PASSWORD_RECOVERY.name());
+        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+        executor.execute(context);
+        verify(eventService).handleEvent(eventCaptor.capture());
+        Event capturedEvent = eventCaptor.getValue();
+        assertEquals(capturedEvent.getEventProperties().get(MagicLinkAuthenticatorConstants.TEMPLATE_TYPE),
+                MAGIC_LINK_PASSWORD_RECOVERY_TEMPLATE);
+    }
+
+    @Test
+    public void testSetMagicLinkTemplateTypeForUnknownFlow() throws Exception {
+
+        prepareInitiationContext();
+        when(context.getFlowType()).thenReturn("UNKNOWN_FLOW");
+        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+        executor.execute(context);
+        verify(eventService).handleEvent(eventCaptor.capture());
+        Event capturedEvent = eventCaptor.getValue();
+        assertNull(capturedEvent.getEventProperties().get(MagicLinkAuthenticatorConstants.TEMPLATE_TYPE));
     }
 
     private void prepareInitiationContext() {
