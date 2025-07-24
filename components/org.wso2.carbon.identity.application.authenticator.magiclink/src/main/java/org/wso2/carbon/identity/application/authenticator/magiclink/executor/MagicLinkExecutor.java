@@ -55,6 +55,8 @@ import static org.wso2.carbon.identity.application.authenticator.magiclink.Magic
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.EXPIRY_TIME;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.LogConstants.ActionIDs.SEND_MAGIC_LINK;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.LogConstants.MAGIC_LINK_AUTH_SERVICE;
+import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.PASSWORD_RECOVERY;
+import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.REGISTRATION;
 
 /**
  * MagicLinkExecutor is responsible for handling the magic link flow.
@@ -64,6 +66,8 @@ public class MagicLinkExecutor implements Executor {
     private static final Log LOG = LogFactory.getLog(MagicLinkExecutor.class);
     public static final String MLT = "mlt";
     public static final String PORTAL_URL = "portalUrl";
+    public static final String MAGIC_LINK_SIGN_UP_TEMPLATE = "magicLinkSignUp";
+    public static final String MAGIC_LINK_PASSWORD_RECOVERY_TEMPLATE = "magicLinkPasswordRecovery";
 
     @Override
     public String getName() {
@@ -176,10 +180,10 @@ public class MagicLinkExecutor implements Executor {
 
         String eventName = IdentityEventConstants.Event.TRIGGER_NOTIFICATION;
         Map<String, Object> properties = new HashMap<>();
+        setMagicLinkTemplateType(context, properties);
         properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUsername());
         properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
         properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
-        properties.put(MagicLinkAuthenticatorConstants.TEMPLATE_TYPE, "magicLinkSignUp");
         properties.put(MagicLinkAuthenticatorConstants.EXPIRYTIME, expiryTime);
         properties.put(MagicLinkAuthenticatorConstants.MAGIC_TOKEN, magicToken);
         properties.put(PORTAL_URL, portalURL);
@@ -281,5 +285,21 @@ public class MagicLinkExecutor implements Executor {
             return Long.parseLong(expiryTime);
         }
         return DEFAULT_EXPIRY_TIME;
+    }
+
+    /**
+     * Set the magic link template type based on the flow type.
+     *
+     * @param context    The flow execution context.
+     * @param properties The properties map to set the template type.
+     */
+    private void setMagicLinkTemplateType(FlowExecutionContext context, Map<String, Object> properties) {
+
+        String flowType = context.getFlowType();
+        if (REGISTRATION.name().equals(flowType)) {
+            properties.put(MagicLinkAuthenticatorConstants.TEMPLATE_TYPE, MAGIC_LINK_SIGN_UP_TEMPLATE);
+        } else if (PASSWORD_RECOVERY.name().equals(flowType)) {
+            properties.put(MagicLinkAuthenticatorConstants.TEMPLATE_TYPE, MAGIC_LINK_PASSWORD_RECOVERY_TEMPLATE);
+        }
     }
 }
