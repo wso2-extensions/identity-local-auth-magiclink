@@ -153,6 +153,7 @@
                             org.owasp.encoder; version="${encoder.wso2.import.version.range}",
                             org.wso2.carbon.identity.flow.execution.engine.*;
                             version="${carbon.identity.framework.imp.pkg.version.range}",
+                            org.wso2.carbon.identity.flow.mgt.*; version="${carbon.identity.framework.imp.pkg.version.range}",
                         </Import-Package>
                         <Private-Package>
                             org.wso2.carbon.identity.application.authenticator.magiclink.internal,
