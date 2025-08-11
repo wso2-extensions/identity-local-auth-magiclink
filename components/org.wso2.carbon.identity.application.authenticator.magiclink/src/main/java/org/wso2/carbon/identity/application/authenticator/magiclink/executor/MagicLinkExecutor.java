@@ -36,7 +36,7 @@ import org.wso2.carbon.identity.event.handler.notification.NotificationConstants
 import org.wso2.carbon.identity.flow.execution.engine.Constants;
 import org.wso2.carbon.identity.flow.execution.engine.exception.FlowEngineClientException;
 import org.wso2.carbon.identity.flow.execution.engine.exception.FlowEngineException;
-import org.wso2.carbon.identity.flow.execution.engine.graph.Executor;
+import org.wso2.carbon.identity.flow.execution.engine.graph.AuthenticationExecutor;
 import org.wso2.carbon.identity.flow.execution.engine.model.ExecutorResponse;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionContext;
 import org.wso2.carbon.user.core.common.User;
@@ -61,7 +61,7 @@ import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.REGISTRATION
 /**
  * MagicLinkExecutor is responsible for handling the magic link flow.
  */
-public class MagicLinkExecutor implements Executor {
+public class MagicLinkExecutor extends AuthenticationExecutor {
 
     private static final Log LOG = LogFactory.getLog(MagicLinkExecutor.class);
     public static final String MLT = "mlt";
@@ -73,6 +73,12 @@ public class MagicLinkExecutor implements Executor {
     public String getName() {
 
         return "MagicLinkExecutor";
+    }
+
+    @Override
+    public String getAMRValue() {
+
+        return MagicLinkAuthenticatorConstants.AUTHENTICATOR_NAME;
     }
 
     @Override
