@@ -48,7 +48,6 @@ public abstract class MagicLinkAuthenticatorConstants {
     public static final String USERNAME_PARAM = "username.param";
     public static final String MAGIC_LINK_CODE = "magic.link.code.param";
     public static final String USER_PROMPT = "USER_PROMPT";
-    public static final String MAGIC_LINK_AUTH_CONTEXT_DATA = "magicLinkAuthContextData";
 
     // Default expiry time in seconds.
     public static final long DEFAULT_EXPIRY_TIME = 300;
