@@ -61,6 +61,7 @@ import static org.wso2.carbon.identity.application.authentication.framework.util
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.USERNAME_CLAIM;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.executor.MagicLinkExecutor.MAGIC_LINK_PASSWORD_RECOVERY_TEMPLATE;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.executor.MagicLinkExecutor.MAGIC_LINK_SIGN_UP_TEMPLATE;
+import static org.wso2.carbon.identity.application.authenticator.magiclink.executor.MagicLinkExecutorConstants.MAGIC_LINK_AUTH_CONTEXT_DATA;
 import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.PASSWORD_RECOVERY;
 import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.REGISTRATION;
 
@@ -289,9 +290,9 @@ public class MagicLinkExecutorTest extends PowerMockTestCase {
         data.setSessionDataKey(TEST_CONTEXT_ID);
 
         Map<String, Object> props = new HashMap<>();
-        props.put(MagicLinkAuthenticatorConstants.MAGIC_LINK_AUTH_CONTEXT_DATA, data);
+        props.put(MAGIC_LINK_AUTH_CONTEXT_DATA, data);
 
-        when(context.getProperty(MagicLinkAuthenticatorConstants.MAGIC_LINK_AUTH_CONTEXT_DATA)).thenReturn(data);
+        when(context.getProperty(MAGIC_LINK_AUTH_CONTEXT_DATA)).thenReturn(data);
         when(context.getProperties()).thenReturn(props);
     }
 }
