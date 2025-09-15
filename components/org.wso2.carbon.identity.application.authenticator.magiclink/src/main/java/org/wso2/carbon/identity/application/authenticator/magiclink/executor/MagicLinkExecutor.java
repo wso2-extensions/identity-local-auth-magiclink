@@ -147,22 +147,25 @@ public class MagicLinkExecutor extends AuthenticationExecutor {
         attributes.put(EMAIL_ADDRESS_CLAIM, emailAddress);
         user.setAttributes(attributes);
 
-        MagicLinkAuthContextData magicLinkAuthContextData = new MagicLinkAuthContextData();
-        String magicToken = TokenGenerator.generateToken(MagicLinkAuthenticatorConstants.TOKEN_LENGTH);
-        magicLinkAuthContextData.setMagicToken(magicToken);
-        magicLinkAuthContextData.setCreatedTimestamp(System.currentTimeMillis());
-        magicLinkAuthContextData.setUser(user);
-        magicLinkAuthContextData.setSessionDataKey(context.getContextIdentifier());
-
-        response.getContextProperties().put(MAGIC_LINK_AUTH_CONTEXT_DATA,
-                magicLinkAuthContextData);
-
-        String expiryTime =
-                TimeUnit.SECONDS.toMinutes(getExpiryTime()) + " " + TimeUnit.MINUTES.name().toLowerCase();
         String state = UUID.randomUUID().toString();
-        context.getProperties().put(MAGIC_LINK_STATE_VALUE, state);
-        magicToken = magicToken + "&" + STATE_PARAM + "=" + state;
-        triggerEvent(context, user, magicToken, expiryTime, context.getPortalUrl());
+        if (!isPasswordRecoveryFlow(context) || StringUtils.isNotBlank(emailAddress)) {
+            MagicLinkAuthContextData magicLinkAuthContextData = new MagicLinkAuthContextData();
+            String magicToken = TokenGenerator.generateToken(MagicLinkAuthenticatorConstants.TOKEN_LENGTH);
+            magicLinkAuthContextData.setMagicToken(magicToken);
+            magicLinkAuthContextData.setCreatedTimestamp(System.currentTimeMillis());
+            magicLinkAuthContextData.setUser(user);
+            magicLinkAuthContextData.setSessionDataKey(context.getContextIdentifier());
+
+            response.getContextProperties().put(MAGIC_LINK_AUTH_CONTEXT_DATA,
+                    magicLinkAuthContextData);
+
+            String expiryTime =
+                    TimeUnit.SECONDS.toMinutes(getExpiryTime()) + " " + TimeUnit.MINUTES.name().toLowerCase();
+
+            context.getProperties().put(MAGIC_LINK_STATE_VALUE, state);
+            magicToken = magicToken + "&" + STATE_PARAM + "=" + state;
+            triggerEvent(context, user, magicToken, expiryTime, context.getPortalUrl());
+        }
         Map<String, String> additionalInfo = response.getAdditionalInfo();
         if (additionalInfo == null) {
             additionalInfo = new HashMap<>();
@@ -276,6 +279,11 @@ public class MagicLinkExecutor extends AuthenticationExecutor {
 
     private void validateRequiredData(FlowExecutionContext context) throws FlowEngineException {
 
+        // Skip username and email validation for password recovery flow to avoid user enumeration.
+        if (isPasswordRecoveryFlow(context)) {
+            return;
+        }
+
         if (StringUtils.isBlank(context.getFlowUser().getUsername())) {
             throw new FlowEngineClientException("Username is required for Magic Link registration.");
         }
@@ -357,5 +365,16 @@ public class MagicLinkExecutor extends AuthenticationExecutor {
         } else if (PASSWORD_RECOVERY.getType().equals(flowType)) {
             properties.put(MagicLinkAuthenticatorConstants.TEMPLATE_TYPE, MAGIC_LINK_PASSWORD_RECOVERY_TEMPLATE);
         }
+    }
+
+    /**
+     * Check if the current flow is a password recovery flow.
+     *
+     * @param context The flow execution context.
+     * @return true if it's a password recovery flow, false otherwise.
+     */
+    private boolean isPasswordRecoveryFlow(FlowExecutionContext context) {
+
+        return StringUtils.equals(context.getFlowType(), String.valueOf(PASSWORD_RECOVERY));
     }
 }
