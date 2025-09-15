@@ -148,7 +148,7 @@ public class MagicLinkExecutor extends AuthenticationExecutor {
         user.setAttributes(attributes);
 
         String state = UUID.randomUUID().toString();
-        if (!isPasswordRecoveryFlow(context) || StringUtils.isNotBlank(emailAddress)) {
+        if (StringUtils.isNotBlank(emailAddress)) {
             MagicLinkAuthContextData magicLinkAuthContextData = new MagicLinkAuthContextData();
             String magicToken = TokenGenerator.generateToken(MagicLinkAuthenticatorConstants.TOKEN_LENGTH);
             magicLinkAuthContextData.setMagicToken(magicToken);
@@ -280,7 +280,7 @@ public class MagicLinkExecutor extends AuthenticationExecutor {
     private void validateRequiredData(FlowExecutionContext context) throws FlowEngineException {
 
         // Skip username and email validation for password recovery flow to avoid user enumeration.
-        if (isPasswordRecoveryFlow(context)) {
+        if (StringUtils.equals(context.getFlowType(), String.valueOf(PASSWORD_RECOVERY))) {
             return;
         }
 
@@ -365,16 +365,5 @@ public class MagicLinkExecutor extends AuthenticationExecutor {
         } else if (PASSWORD_RECOVERY.getType().equals(flowType)) {
             properties.put(MagicLinkAuthenticatorConstants.TEMPLATE_TYPE, MAGIC_LINK_PASSWORD_RECOVERY_TEMPLATE);
         }
-    }
-
-    /**
-     * Check if the current flow is a password recovery flow.
-     *
-     * @param context The flow execution context.
-     * @return true if it's a password recovery flow, false otherwise.
-     */
-    private boolean isPasswordRecoveryFlow(FlowExecutionContext context) {
-
-        return StringUtils.equals(context.getFlowType(), String.valueOf(PASSWORD_RECOVERY));
     }
 }
