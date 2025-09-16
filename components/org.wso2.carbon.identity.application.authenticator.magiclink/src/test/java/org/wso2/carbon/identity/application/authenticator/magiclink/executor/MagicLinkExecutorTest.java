@@ -51,6 +51,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
@@ -62,6 +63,7 @@ import static org.wso2.carbon.identity.application.authentication.framework.util
 import static org.wso2.carbon.identity.application.authenticator.magiclink.executor.MagicLinkExecutor.MAGIC_LINK_PASSWORD_RECOVERY_TEMPLATE;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.executor.MagicLinkExecutor.MAGIC_LINK_SIGN_UP_TEMPLATE;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.executor.MagicLinkExecutorConstants.MAGIC_LINK_AUTH_CONTEXT_DATA;
+import static org.wso2.carbon.identity.application.authenticator.magiclink.executor.MagicLinkExecutorConstants.STATE_PARAM;
 import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.PASSWORD_RECOVERY;
 import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.REGISTRATION;
 
@@ -158,6 +160,9 @@ public class MagicLinkExecutorTest extends PowerMockTestCase {
         ExecutorResponse response = executor.execute(context);
         assertEquals(response.getResult(), Constants.ExecutorStatus.STATUS_USER_INPUT_REQUIRED);
         assertTrue(response.getRequiredData().contains(MagicLinkExecutor.MLT));
+        assertNotNull(response.getAdditionalInfo());
+        assertTrue(response.getAdditionalInfo().containsKey(STATE_PARAM));
+        assertNotNull(response.getAdditionalInfo().get(STATE_PARAM));
     }
 
     @Test
@@ -248,6 +253,50 @@ public class MagicLinkExecutorTest extends PowerMockTestCase {
         assertNull(capturedEvent.getEventProperties().get(MagicLinkAuthenticatorConstants.TEMPLATE_TYPE));
     }
 
+    @Test
+    public void testPasswordRecoveryFlowWithMissingEmail() throws Exception {
+
+        when(flowUser.getUsername()).thenReturn(TEST_USERNAME);
+        when(flowUser.getClaim(EMAIL_ADDRESS_CLAIM)).thenReturn(null);
+        when(context.getTenantDomain()).thenReturn(TEST_TENANT);
+        when(context.getContextIdentifier()).thenReturn(TEST_CONTEXT_ID);
+        when(context.getPortalUrl()).thenReturn("https://portal");
+        when(context.getFlowType()).thenReturn(PASSWORD_RECOVERY.name());
+        when(context.getUserInputData()).thenReturn(new HashMap<>());
+        when(context.getProperties()).thenReturn(new HashMap<>());
+
+        ExecutorResponse response = executor.execute(context);
+
+        assertEquals(response.getResult(), Constants.ExecutorStatus.STATUS_USER_INPUT_REQUIRED);
+        assertNotNull(response.getAdditionalInfo());
+        assertTrue(response.getAdditionalInfo().containsKey(STATE_PARAM));
+
+        verify(eventService, never()).handleEvent(any(Event.class));
+        assertNull(response.getContextProperties().get(MAGIC_LINK_AUTH_CONTEXT_DATA));
+    }
+
+    @Test
+    public void testPasswordRecoveryFlowWithValidEmail() throws Exception {
+
+        when(flowUser.getUsername()).thenReturn(TEST_USERNAME);
+        when(flowUser.getClaim(EMAIL_ADDRESS_CLAIM)).thenReturn(TEST_EMAIL);
+        when(context.getTenantDomain()).thenReturn(TEST_TENANT);
+        when(context.getContextIdentifier()).thenReturn(TEST_CONTEXT_ID);
+        when(context.getPortalUrl()).thenReturn("https://portal");
+        when(context.getFlowType()).thenReturn(PASSWORD_RECOVERY.name());
+        when(context.getUserInputData()).thenReturn(new HashMap<>());
+        when(context.getProperties()).thenReturn(new HashMap<>());
+
+        ExecutorResponse response = executor.execute(context);
+
+        assertEquals(response.getResult(), Constants.ExecutorStatus.STATUS_USER_INPUT_REQUIRED);
+        assertNotNull(response.getAdditionalInfo());
+        assertTrue(response.getAdditionalInfo().containsKey(STATE_PARAM));
+
+        verify(eventService).handleEvent(any(Event.class));
+        assertNotNull(response.getContextProperties().get(MAGIC_LINK_AUTH_CONTEXT_DATA));
+    }
+
     private void prepareInitiationContext() {
 
         when(flowUser.getUsername()).thenReturn(TEST_USERNAME);
@@ -257,6 +306,7 @@ public class MagicLinkExecutorTest extends PowerMockTestCase {
         when(context.getPortalUrl()).thenReturn("https://portal");
         when(context.getFlowType()).thenReturn("signup");
         when(context.getUserInputData()).thenReturn(new HashMap<>());
+        when(context.getProperties()).thenReturn(new HashMap<>());
     }
 
     private void prepareVerificationContext(boolean includeToken, String contextUsername) {
