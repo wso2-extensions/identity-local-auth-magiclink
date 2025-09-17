@@ -276,6 +276,11 @@ public class MagicLinkExecutor extends AuthenticationExecutor {
 
     private void validateRequiredData(FlowExecutionContext context) throws FlowEngineException {
 
+        // Skip username and email validation for password recovery flow to avoid user enumeration.
+        if (StringUtils.equals(context.getFlowType(), String.valueOf(PASSWORD_RECOVERY))) {
+            return;
+        }
+
         if (StringUtils.isBlank(context.getFlowUser().getUsername())) {
             throw new FlowEngineClientException("Username is required for Magic Link registration.");
         }
