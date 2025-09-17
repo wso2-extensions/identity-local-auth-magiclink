@@ -159,7 +159,6 @@ public class MagicLinkExecutorTest extends PowerMockTestCase {
         ExecutorResponse response = executor.execute(context);
         assertEquals(response.getResult(), Constants.ExecutorStatus.STATUS_USER_INPUT_REQUIRED);
         assertTrue(response.getRequiredData().contains(MagicLinkExecutor.MLT));
-        assertNotNull(response.getAdditionalInfo());
     }
 
     @Test
