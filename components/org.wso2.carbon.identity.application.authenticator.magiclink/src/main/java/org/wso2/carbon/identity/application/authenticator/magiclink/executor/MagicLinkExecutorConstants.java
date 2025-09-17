@@ -28,8 +28,6 @@ public class MagicLinkExecutorConstants {
     }
 
     public static final String MAGIC_LINK_AUTH_CONTEXT_DATA = "magicLinkAuthContextData";
-    public static final String STATE_PARAM = "state";
-    public static final String MAGIC_LINK_STATE_VALUE = "magicLinkStateValue";
 
     /**
      * Constants related to log management.
