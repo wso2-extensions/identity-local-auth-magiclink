@@ -263,7 +263,7 @@ public class MagicLinkExecutorTest extends PowerMockTestCase {
         assertTrue(response.getAdditionalInfo().containsKey(STATE_PARAM));
 
         verify(eventService, never()).handleEvent(any(Event.class));
-        assertNull(response.getContextProperties().get(MAGIC_LINK_AUTH_CONTEXT_DATA));
+        assertNull(response.getContextProperties().get(MAGIC_LINK_EXECUTOR_CONTEXT));
     }
 
     @Test
@@ -285,7 +285,7 @@ public class MagicLinkExecutorTest extends PowerMockTestCase {
         assertTrue(response.getAdditionalInfo().containsKey(STATE_PARAM));
 
         verify(eventService).handleEvent(any(Event.class));
-        assertNotNull(response.getContextProperties().get(MAGIC_LINK_AUTH_CONTEXT_DATA));
+        assertNotNull(response.getContextProperties().get(MAGIC_LINK_EXECUTOR_CONTEXT));
     }
 
     private void prepareInitiationContext() {
