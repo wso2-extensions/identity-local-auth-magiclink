@@ -149,23 +149,26 @@ public class MagicLinkExecutor extends AuthenticationExecutor {
         attributes.put(EMAIL_ADDRESS_CLAIM, emailAddress);
         user.setAttributes(attributes);
 
-        HashMap<String, Object> magicLinkExecContextData = new HashMap<>();
-        String magicToken = TokenGenerator.generateToken(MagicLinkAuthenticatorConstants.TOKEN_LENGTH);
-        magicLinkExecContextData.put(MagicLinkExecutorConstants.MagicLinkData.MAGIC_TOKEN, magicToken);
-        magicLinkExecContextData.put(MagicLinkExecutorConstants.MagicLinkData.CREATED_TIMESTAMP
-                ,System.currentTimeMillis());
-        magicLinkExecContextData.put(MagicLinkExecutorConstants.MagicLinkData.FLOW_ID,
-                context.getContextIdentifier());
-
-        response.getContextProperties().put(MAGIC_LINK_EXECUTOR_CONTEXT,
-                magicLinkExecContextData);
-
-        String expiryTime =
-                TimeUnit.SECONDS.toMinutes(getExpiryTime()) + " " + TimeUnit.MINUTES.name().toLowerCase();
         String state = UUID.randomUUID().toString();
-        context.getProperties().put(MAGIC_LINK_STATE_VALUE, state);
-        magicToken = magicToken + "&" + STATE_PARAM + "=" + state;
-        triggerEvent(context, user, magicToken, expiryTime, context.getPortalUrl());
+        if (StringUtils.isNotBlank(emailAddress)) {
+            HashMap<String, Object> magicLinkExecContextData = new HashMap<>();
+            String magicToken = TokenGenerator.generateToken(MagicLinkAuthenticatorConstants.TOKEN_LENGTH);
+            magicLinkExecContextData.put(MagicLinkExecutorConstants.MagicLinkData.MAGIC_TOKEN, magicToken);
+            magicLinkExecContextData.put(MagicLinkExecutorConstants.MagicLinkData.CREATED_TIMESTAMP
+                    ,System.currentTimeMillis());
+            magicLinkExecContextData.put(MagicLinkExecutorConstants.MagicLinkData.FLOW_ID,
+                    context.getContextIdentifier());
+
+            response.getContextProperties().put(MAGIC_LINK_EXECUTOR_CONTEXT,
+                    magicLinkExecContextData);
+
+            String expiryTime =
+                    TimeUnit.SECONDS.toMinutes(getExpiryTime()) + " " + TimeUnit.MINUTES.name().toLowerCase();
+
+            context.getProperties().put(MAGIC_LINK_STATE_VALUE, state);
+            magicToken = magicToken + "&" + STATE_PARAM + "=" + state;
+            triggerEvent(context, user, magicToken, expiryTime, context.getPortalUrl());
+        }
         Map<String, String> additionalInfo = response.getAdditionalInfo();
         if (additionalInfo == null) {
             additionalInfo = new HashMap<>();
