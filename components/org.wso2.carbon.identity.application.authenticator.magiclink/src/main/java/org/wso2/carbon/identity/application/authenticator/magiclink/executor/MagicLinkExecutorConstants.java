@@ -27,7 +27,7 @@ public class MagicLinkExecutorConstants {
 
     }
 
-    public static final String MAGIC_LINK_AUTH_CONTEXT_DATA = "magicLinkAuthContextData";
+    public static final String MAGIC_LINK_EXECUTOR_CONTEXT = "magicLinkExecutorContextData";
     public static final String STATE_PARAM = "state";
     public static final String MAGIC_LINK_STATE_VALUE = "magicLinkStateValue";
 
@@ -46,5 +46,13 @@ public class MagicLinkExecutorConstants {
             public static final String SEND_MAGIC_LINK = "send-magiclink-token";
             public static final String PROCESS_MAGIC_LINK = "process-magiclink-token";
         }
+    }
+
+    public static class MagicLinkData {
+
+        public static final String flowID  = "flowID";
+        public static final String MAGIC_TOKEN= "magicToken";
+        public static final String CREATED_TIMESTAMP = "createdTimestamp";
+
     }
 }
