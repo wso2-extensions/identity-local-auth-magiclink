@@ -23,7 +23,7 @@ import java.io.Serializable;
 /**
  * Magic Link flow context data.
  */
-public class MagicLinkExecutorContextData implements Serializable {
+public class MagicLinkExecutorContextData {
 
     private String flowID;
     private String magicToken;
