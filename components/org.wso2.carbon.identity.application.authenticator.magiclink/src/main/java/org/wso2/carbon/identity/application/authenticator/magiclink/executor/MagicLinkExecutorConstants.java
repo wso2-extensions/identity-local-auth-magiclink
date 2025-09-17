@@ -50,7 +50,7 @@ public class MagicLinkExecutorConstants {
 
     public static class MagicLinkData {
 
-        public static final String flowID  = "flowID";
+        public static final String FLOW_ID = "flowID";
         public static final String MAGIC_TOKEN= "magicToken";
         public static final String CREATED_TIMESTAMP = "createdTimestamp";
 

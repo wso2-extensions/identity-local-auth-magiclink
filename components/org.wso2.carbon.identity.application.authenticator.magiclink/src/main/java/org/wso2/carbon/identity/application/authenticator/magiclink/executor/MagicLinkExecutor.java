@@ -154,7 +154,7 @@ public class MagicLinkExecutor extends AuthenticationExecutor {
         magicLinkExecContextData.put(MagicLinkExecutorConstants.MagicLinkData.MAGIC_TOKEN, magicToken);
         magicLinkExecContextData.put(MagicLinkExecutorConstants.MagicLinkData.CREATED_TIMESTAMP
                 ,System.currentTimeMillis());
-        magicLinkExecContextData.put(MagicLinkExecutorConstants.MagicLinkData.flowID,
+        magicLinkExecContextData.put(MagicLinkExecutorConstants.MagicLinkData.FLOW_ID,
                 context.getContextIdentifier());
 
         response.getContextProperties().put(MAGIC_LINK_EXECUTOR_CONTEXT,
