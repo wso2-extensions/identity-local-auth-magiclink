@@ -373,19 +373,21 @@ public class MagicLinkExecutor extends AuthenticationExecutor {
      */
     private static MagicLinkExecutorContextData getMagicLinkFromContext(FlowExecutionContext flowExecutionContext,
                                                                     ExecutorResponse response) {
+
         Object value = flowExecutionContext.getProperty(MAGIC_LINK_EXECUTOR_CONTEXT);
+        if (value == null) {
+            response.setResult(Constants.ExecutorStatus.STATUS_ERROR);
+            response.setErrorMessage("Magic Link is not generated.");
+            return null;
+        }
+
         ObjectMapper objectMapper = new ObjectMapper();
         HashMap<String, Object> contextMagicLink = objectMapper.convertValue(value,
                 new TypeReference<HashMap<String, Object>>() {
                 });
-        if (contextMagicLink == null) {
-            response.setResult(Constants.ExecutorStatus.STATUS_ERROR);
-            response.setErrorMessage("OTP is not generated.");
-            return null;
-        }
 
         Long createdTimestamp;
-        if (contextMagicLink.get(MagicLinkExecutorConstants.MagicLinkData.CREATED_TIMESTAMP) instanceof Integer){
+        if (contextMagicLink.get(MagicLinkExecutorConstants.MagicLinkData.CREATED_TIMESTAMP) instanceof Integer) {
             createdTimestamp =
                     ((Integer) contextMagicLink.get(MagicLinkExecutorConstants.MagicLinkData.CREATED_TIMESTAMP))
                             .longValue();
@@ -393,7 +395,7 @@ public class MagicLinkExecutor extends AuthenticationExecutor {
             createdTimestamp = (Long) contextMagicLink.get(MagicLinkExecutorConstants.MagicLinkData.CREATED_TIMESTAMP);
         } else {
             response.setResult(Constants.ExecutorStatus.STATUS_ERROR);
-            response.setErrorMessage("Invalid OTP data.");
+            response.setErrorMessage("Invalid Magic Link.");
             return null;
         }
 
