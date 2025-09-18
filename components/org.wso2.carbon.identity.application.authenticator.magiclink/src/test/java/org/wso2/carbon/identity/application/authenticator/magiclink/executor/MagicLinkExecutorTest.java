@@ -30,7 +30,7 @@ import org.wso2.carbon.identity.application.authentication.framework.config.mode
 import org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants;
 import org.wso2.carbon.identity.application.authenticator.magiclink.TokenGenerator;
 import org.wso2.carbon.identity.application.authenticator.magiclink.internal.MagicLinkServiceDataHolder;
-import org.wso2.carbon.identity.application.authenticator.magiclink.model.MagicLinkAuthContextData;
+import org.wso2.carbon.identity.application.authenticator.magiclink.model.MagicLinkExecutorContextData;
 import org.wso2.carbon.identity.central.log.mgt.utils.LoggerUtils;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
@@ -62,7 +62,7 @@ import static org.wso2.carbon.identity.application.authentication.framework.util
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.USERNAME_CLAIM;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.executor.MagicLinkExecutor.MAGIC_LINK_PASSWORD_RECOVERY_TEMPLATE;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.executor.MagicLinkExecutor.MAGIC_LINK_SIGN_UP_TEMPLATE;
-import static org.wso2.carbon.identity.application.authenticator.magiclink.executor.MagicLinkExecutorConstants.MAGIC_LINK_AUTH_CONTEXT_DATA;
+import static org.wso2.carbon.identity.application.authenticator.magiclink.executor.MagicLinkExecutorConstants.MAGIC_LINK_EXECUTOR_CONTEXT;
 import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.PASSWORD_RECOVERY;
 import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.REGISTRATION;
 
@@ -173,7 +173,7 @@ public class MagicLinkExecutorTest extends PowerMockTestCase {
     @Test
     public void testExecuteProcessesMagicLinkSuccess() throws Exception {
 
-        prepareVerificationContext(true, TEST_USERNAME);
+        prepareVerificationContext(true);
         ExecutorResponse response = executor.execute(context);
         assertEquals(response.getResult(), Constants.ExecutorStatus.STATUS_COMPLETE);
     }
@@ -181,7 +181,7 @@ public class MagicLinkExecutorTest extends PowerMockTestCase {
     @Test
     public void testExecuteFailsWithMissingToken() throws Exception {
 
-        prepareVerificationContext(false, TEST_USERNAME);
+        prepareVerificationContext(false);
         ExecutorResponse response = executor.execute(context);
         assertEquals(response.getResult(), Constants.ExecutorStatus.STATUS_USER_ERROR);
         assertNotNull(response.getErrorMessage());
@@ -190,19 +190,10 @@ public class MagicLinkExecutorTest extends PowerMockTestCase {
     @Test
     public void testExecuteFailsWithExpiredToken() throws Exception {
 
-        prepareVerificationContext(true, TEST_USERNAME, -999999L);
+        prepareVerificationContext(true, -999999L);
         ExecutorResponse response = executor.execute(context);
         assertEquals(response.getResult(), Constants.ExecutorStatus.STATUS_USER_ERROR);
-        assertTrue(response.getErrorMessage().contains("expired"));
-    }
-
-    @Test
-    public void testExecuteFailsWithUserMismatch() throws Exception {
-
-        prepareVerificationContext(true, "differentUser");
-        ExecutorResponse response = executor.execute(context);
-        assertEquals(response.getResult(), Constants.ExecutorStatus.STATUS_USER_ERROR);
-        assertTrue(response.getErrorMessage().contains("Username mismatch"));
+        assertTrue(response.getErrorMessage().contains("magic.link.error.message"));
     }
 
     @Test
@@ -266,7 +257,7 @@ public class MagicLinkExecutorTest extends PowerMockTestCase {
         assertEquals(response.getResult(), Constants.ExecutorStatus.STATUS_USER_INPUT_REQUIRED);
 
         verify(eventService, never()).handleEvent(any(Event.class));
-        assertNull(response.getContextProperties().get(MAGIC_LINK_AUTH_CONTEXT_DATA));
+        assertNull(response.getContextProperties().get(MAGIC_LINK_EXECUTOR_CONTEXT));
     }
 
     @Test
@@ -286,7 +277,7 @@ public class MagicLinkExecutorTest extends PowerMockTestCase {
         assertEquals(response.getResult(), Constants.ExecutorStatus.STATUS_USER_INPUT_REQUIRED);
 
         verify(eventService).handleEvent(any(Event.class));
-        assertNotNull(response.getContextProperties().get(MAGIC_LINK_AUTH_CONTEXT_DATA));
+        assertNotNull(response.getContextProperties().get(MAGIC_LINK_EXECUTOR_CONTEXT));
     }
 
     private void prepareInitiationContext() {
@@ -301,12 +292,12 @@ public class MagicLinkExecutorTest extends PowerMockTestCase {
         when(context.getProperties()).thenReturn(new HashMap<>());
     }
 
-    private void prepareVerificationContext(boolean includeToken, String contextUsername) {
+    private void prepareVerificationContext(boolean includeToken) {
 
-        prepareVerificationContext(includeToken, contextUsername, System.currentTimeMillis());
+        prepareVerificationContext(includeToken, System.currentTimeMillis());
     }
 
-    private void prepareVerificationContext(boolean includeToken, String contextUsername, long timestamp) {
+    private void prepareVerificationContext(boolean includeToken, long timestamp) {
 
         when(flowUser.getUsername()).thenReturn(TEST_USERNAME);
         when(flowUser.getClaim(EMAIL_ADDRESS_CLAIM)).thenReturn(TEST_EMAIL);
@@ -317,24 +308,15 @@ public class MagicLinkExecutorTest extends PowerMockTestCase {
         }
         when(context.getUserInputData()).thenReturn(input);
 
-        User user = new User();
-        user.setUsername(contextUsername);
-        user.setTenantDomain(TEST_TENANT);
-        Map<String, String> attrs = new HashMap<>();
-        attrs.put(USERNAME_CLAIM, contextUsername);
-        attrs.put(EMAIL_ADDRESS_CLAIM, TEST_EMAIL);
-        user.setAttributes(attrs);
-
-        MagicLinkAuthContextData data = new MagicLinkAuthContextData();
-        data.setUser(user);
+        MagicLinkExecutorContextData data = new MagicLinkExecutorContextData();
         data.setMagicToken(TEST_TOKEN);
         data.setCreatedTimestamp(System.currentTimeMillis() + timestamp);
-        data.setSessionDataKey(TEST_CONTEXT_ID);
+        data.setFlowID(TEST_CONTEXT_ID);
 
         Map<String, Object> props = new HashMap<>();
-        props.put(MAGIC_LINK_AUTH_CONTEXT_DATA, data);
+        props.put(MAGIC_LINK_EXECUTOR_CONTEXT, data);
 
-        when(context.getProperty(MAGIC_LINK_AUTH_CONTEXT_DATA)).thenReturn(data);
+        when(context.getProperty(MAGIC_LINK_EXECUTOR_CONTEXT)).thenReturn(data);
         when(context.getProperties()).thenReturn(props);
     }
 }

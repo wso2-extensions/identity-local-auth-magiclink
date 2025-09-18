@@ -18,6 +18,8 @@
 
 package org.wso2.carbon.identity.application.authenticator.magiclink.executor;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -26,7 +28,7 @@ import org.wso2.carbon.identity.application.authentication.framework.config.mode
 import org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants;
 import org.wso2.carbon.identity.application.authenticator.magiclink.TokenGenerator;
 import org.wso2.carbon.identity.application.authenticator.magiclink.internal.MagicLinkServiceDataHolder;
-import org.wso2.carbon.identity.application.authenticator.magiclink.model.MagicLinkAuthContextData;
+import org.wso2.carbon.identity.application.authenticator.magiclink.model.MagicLinkExecutorContextData;
 import org.wso2.carbon.identity.central.log.mgt.utils.LogConstants;
 import org.wso2.carbon.identity.central.log.mgt.utils.LoggerUtils;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
@@ -57,7 +59,7 @@ import static org.wso2.carbon.identity.application.authenticator.magiclink.Magic
 import static org.wso2.carbon.identity.application.authenticator.magiclink.executor.MagicLinkExecutorConstants.LogConstants.ActionIDs.PROCESS_MAGIC_LINK;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.executor.MagicLinkExecutorConstants.LogConstants.ActionIDs.SEND_MAGIC_LINK;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.executor.MagicLinkExecutorConstants.LogConstants.MAGIC_LINK_AUTH_SERVICE;
-import static org.wso2.carbon.identity.application.authenticator.magiclink.executor.MagicLinkExecutorConstants.MAGIC_LINK_AUTH_CONTEXT_DATA;
+import static org.wso2.carbon.identity.application.authenticator.magiclink.executor.MagicLinkExecutorConstants.MAGIC_LINK_EXECUTOR_CONTEXT;
 import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.INVITED_USER_REGISTRATION;
 import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.PASSWORD_RECOVERY;
 import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.REGISTRATION;
@@ -93,7 +95,7 @@ public class MagicLinkExecutor extends AuthenticationExecutor {
         response.setContextProperty(contextProperties);
         try {
             validateRequiredData(context);
-            if (isInitiation(context)) {
+            if (isInitiation(context, response)) {
                 return initiateMagicLink(context, response);
             } else {
                 return processMagicLink(context, response);
@@ -147,15 +149,16 @@ public class MagicLinkExecutor extends AuthenticationExecutor {
 
         String state = UUID.randomUUID().toString();
         if (StringUtils.isNotBlank(emailAddress)) {
-            MagicLinkAuthContextData magicLinkAuthContextData = new MagicLinkAuthContextData();
+            HashMap<String, Object> magicLinkExecContextData = new HashMap<>();
             String magicToken = TokenGenerator.generateToken(MagicLinkAuthenticatorConstants.TOKEN_LENGTH);
-            magicLinkAuthContextData.setMagicToken(magicToken);
-            magicLinkAuthContextData.setCreatedTimestamp(System.currentTimeMillis());
-            magicLinkAuthContextData.setUser(user);
-            magicLinkAuthContextData.setSessionDataKey(context.getContextIdentifier());
+            magicLinkExecContextData.put(MagicLinkExecutorConstants.MagicLinkData.MAGIC_TOKEN, magicToken);
+            magicLinkExecContextData.put(MagicLinkExecutorConstants.MagicLinkData.CREATED_TIMESTAMP
+                    ,System.currentTimeMillis());
+            magicLinkExecContextData.put(MagicLinkExecutorConstants.MagicLinkData.FLOW_ID,
+                    context.getContextIdentifier());
 
-            response.getContextProperties().put(MAGIC_LINK_AUTH_CONTEXT_DATA,
-                    magicLinkAuthContextData);
+            response.getContextProperties().put(MAGIC_LINK_EXECUTOR_CONTEXT,
+                    magicLinkExecContextData);
 
             String expiryTime =
                     TimeUnit.SECONDS.toMinutes(getExpiryTime()) + " " + TimeUnit.MINUTES.name().toLowerCase();
@@ -172,36 +175,30 @@ public class MagicLinkExecutor extends AuthenticationExecutor {
             return userErrorResponse(response, "Magic Link token is required for verification.");
         }
 
-        MagicLinkAuthContextData magicLinkAuthContextData = (MagicLinkAuthContextData)
-                context.getProperty(MAGIC_LINK_AUTH_CONTEXT_DATA);
-        if (magicLinkAuthContextData == null) {
-            return userErrorResponse(response, "Invalid or expired magic link token.");
+        MagicLinkExecutorContextData magicLinkExecContextData = getMagicLinkFromContext(context, response);
+        if (magicLinkExecContextData == null) {
+            return userErrorResponse(response, "{{magic.link.error.message}}");
         }
 
-        if (!isMagicTokenValid(magicLinkAuthContextData)) {
-            return userErrorResponse(response, "Magic link token has expired.");
+        if (!isMagicTokenValid(magicLinkExecContextData)) {
+            return userErrorResponse(response, "{{magic.link.error.message}}");
         }
 
-        User user = magicLinkAuthContextData.getUser();
-        if (user == null || user.getUsername() == null) {
-            return userErrorResponse(response, "User information is missing in the magic link token.");
-        }
-
-        if (!user.getUsername().equals(context.getFlowUser().getUsername())) {
-            return userErrorResponse(response, "Username mismatch in the magic link token.");
+        if (!magicToken.equals(magicLinkExecContextData.getMagicToken())) {
+            return userErrorResponse(response, "{{magic.link.error.message}}");
         }
 
         DiagnosticLog.DiagnosticLogBuilder diagnosticLogBuilder = null;
         if (LoggerUtils.isDiagnosticLogsEnabled()) {
             diagnosticLogBuilder = new DiagnosticLog.DiagnosticLogBuilder(MAGIC_LINK_AUTH_SERVICE, PROCESS_MAGIC_LINK);
             diagnosticLogBuilder.logDetailLevel(DiagnosticLog.LogDetailLevel.APPLICATION)
-                    .inputParam("user store domain", user.getUserStoreDomain())
+                    .inputParam("user store domain", context.getFlowUser().getUserStoreDomain())
                     .inputParam(LogConstants.InputKeys.USER, LoggerUtils.isLogMaskingEnable ?
-                            LoggerUtils.getMaskedContent(user.getUsername()) : user.getUsername())
-                    .inputParam(LogConstants.InputKeys.USER_ID, user.getUserID());
+                            LoggerUtils.getMaskedContent(context.getFlowUser().getUsername()) :
+                            context.getFlowUser().getUsername());
         }
 
-        context.getProperties().remove(MAGIC_LINK_AUTH_CONTEXT_DATA);
+        context.getProperties().remove(MAGIC_LINK_EXECUTOR_CONTEXT);
         response.setResult(Constants.ExecutorStatus.STATUS_COMPLETE);
         return response;
     }
@@ -261,10 +258,10 @@ public class MagicLinkExecutor extends AuthenticationExecutor {
         }
     }
 
-    private boolean isInitiation(FlowExecutionContext context) {
+    private boolean isInitiation(FlowExecutionContext context, ExecutorResponse response) {
 
         return context.getUserInputData().get(MLT) == null &&
-                context.getProperty(MAGIC_LINK_AUTH_CONTEXT_DATA) == null;
+                getMagicLinkFromContext(context, response) == null;
     }
 
     private void validateRequiredData(FlowExecutionContext context) throws FlowEngineException {
@@ -306,14 +303,14 @@ public class MagicLinkExecutor extends AuthenticationExecutor {
     /**
      * Validate the magic token.
      *
-     * @param magicLinkAuthContextData The magic link authentication context data.
+     * @param magicLinkExecContextData The magic link authentication context data.
      * @return true if the token is valid, false otherwise.
      */
-    private boolean isMagicTokenValid(MagicLinkAuthContextData magicLinkAuthContextData) {
+    private boolean isMagicTokenValid(MagicLinkExecutorContextData magicLinkExecContextData) {
 
-        if (magicLinkAuthContextData != null) {
+        if (magicLinkExecContextData != null) {
             long currentTimestamp = System.currentTimeMillis();
-            long createdTimestamp = magicLinkAuthContextData.getCreatedTimestamp();
+            long createdTimestamp = magicLinkExecContextData.getCreatedTimestamp();
             long tokenValidityPeriod = TimeUnit.SECONDS.toMillis(getExpiryTime());
             return currentTimestamp - createdTimestamp < tokenValidityPeriod;
         }
@@ -355,5 +352,48 @@ public class MagicLinkExecutor extends AuthenticationExecutor {
         } else if (PASSWORD_RECOVERY.getType().equals(flowType)) {
             properties.put(MagicLinkAuthenticatorConstants.TEMPLATE_TYPE, MAGIC_LINK_PASSWORD_RECOVERY_TEMPLATE);
         }
+    }
+
+    /**
+     * Retrieve the MagicLinkExecutorContextData from the FlowExecutionContext.
+     *
+     * @param flowExecutionContext The flow execution context.
+     * @param response             The executor response to set error messages if any.
+     * @return The MagicLinkExecutorContextData or null if not found or invalid.
+     */
+    private static MagicLinkExecutorContextData getMagicLinkFromContext(FlowExecutionContext flowExecutionContext,
+                                                                    ExecutorResponse response) {
+
+        Object value = flowExecutionContext.getProperty(MAGIC_LINK_EXECUTOR_CONTEXT);
+        if (value == null) {
+            response.setResult(Constants.ExecutorStatus.STATUS_ERROR);
+            response.setErrorMessage("Magic Link is not generated.");
+            return null;
+        }
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        HashMap<String, Object> contextMagicLink = objectMapper.convertValue(value,
+                new TypeReference<HashMap<String, Object>>() {
+                });
+
+        Long createdTimestamp;
+        if (contextMagicLink.get(MagicLinkExecutorConstants.MagicLinkData.CREATED_TIMESTAMP) instanceof Integer) {
+            createdTimestamp =
+                    ((Integer) contextMagicLink.get(MagicLinkExecutorConstants.MagicLinkData.CREATED_TIMESTAMP))
+                            .longValue();
+        } else if (contextMagicLink.get(MagicLinkExecutorConstants.MagicLinkData.CREATED_TIMESTAMP) instanceof Long) {
+            createdTimestamp = (Long) contextMagicLink.get(MagicLinkExecutorConstants.MagicLinkData.CREATED_TIMESTAMP);
+        } else {
+            response.setResult(Constants.ExecutorStatus.STATUS_ERROR);
+            response.setErrorMessage("Invalid Magic Link.");
+            return null;
+        }
+
+        MagicLinkExecutorContextData magicLinkExecContextData = new MagicLinkExecutorContextData();
+        magicLinkExecContextData.setMagicToken(
+                (String) contextMagicLink.get(MagicLinkExecutorConstants.MagicLinkData.MAGIC_TOKEN));
+        magicLinkExecContextData.setCreatedTimestamp(createdTimestamp);
+        magicLinkExecContextData.setFlowID(flowExecutionContext.getContextIdentifier());
+        return magicLinkExecContextData;
     }
 }
