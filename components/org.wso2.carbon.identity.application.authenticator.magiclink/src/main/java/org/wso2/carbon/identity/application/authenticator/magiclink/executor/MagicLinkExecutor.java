@@ -60,8 +60,6 @@ import static org.wso2.carbon.identity.application.authenticator.magiclink.execu
 import static org.wso2.carbon.identity.application.authenticator.magiclink.executor.MagicLinkExecutorConstants.LogConstants.ActionIDs.SEND_MAGIC_LINK;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.executor.MagicLinkExecutorConstants.LogConstants.MAGIC_LINK_AUTH_SERVICE;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.executor.MagicLinkExecutorConstants.MAGIC_LINK_EXECUTOR_CONTEXT;
-import static org.wso2.carbon.identity.application.authenticator.magiclink.executor.MagicLinkExecutorConstants.MAGIC_LINK_STATE_VALUE;
-import static org.wso2.carbon.identity.application.authenticator.magiclink.executor.MagicLinkExecutorConstants.STATE_PARAM;
 import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.INVITED_USER_REGISTRATION;
 import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.PASSWORD_RECOVERY;
 import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.REGISTRATION;
@@ -164,17 +162,9 @@ public class MagicLinkExecutor extends AuthenticationExecutor {
 
             String expiryTime =
                     TimeUnit.SECONDS.toMinutes(getExpiryTime()) + " " + TimeUnit.MINUTES.name().toLowerCase();
-
-            context.getProperties().put(MAGIC_LINK_STATE_VALUE, state);
-            magicToken = magicToken + "&" + STATE_PARAM + "=" + state;
+            magicToken = magicToken + "&" + "flowId=" + context.getContextIdentifier();
             triggerEvent(context, user, magicToken, expiryTime, context.getPortalUrl());
         }
-        Map<String, String> additionalInfo = response.getAdditionalInfo();
-        if (additionalInfo == null) {
-            additionalInfo = new HashMap<>();
-        }
-        additionalInfo.put(STATE_PARAM, state);
-        response.setAdditionalInfo(additionalInfo);
         return userInputRequiredResponse(response, MLT);
     }
 
