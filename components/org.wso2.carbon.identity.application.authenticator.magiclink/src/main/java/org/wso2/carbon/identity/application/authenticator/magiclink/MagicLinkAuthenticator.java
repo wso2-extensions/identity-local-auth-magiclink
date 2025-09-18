@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2022, WSO2 LLC. (https://www.wso2.com).
+ * Copyright (c) 2022-2025, WSO2 LLC. (https://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -45,6 +45,7 @@ import org.wso2.carbon.identity.application.authenticator.magiclink.cache.MagicL
 import org.wso2.carbon.identity.application.authenticator.magiclink.internal.MagicLinkServiceDataHolder;
 import org.wso2.carbon.identity.application.authenticator.magiclink.model.MagicLinkAuthContextData;
 import org.wso2.carbon.identity.application.authenticator.magiclink.util.MagicLinkAuthErrorConstants;
+import org.wso2.carbon.identity.application.authenticator.magiclink.util.MagicLinkAuthUtils;
 import org.wso2.carbon.identity.central.log.mgt.utils.LogConstants;
 import org.wso2.carbon.identity.central.log.mgt.utils.LoggerUtils;
 import org.wso2.carbon.identity.core.ServiceURLBuilder;
@@ -69,6 +70,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.ACCOUNT_LOCKED;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.BLOCKED_USERSTORE_DOMAINS_LIST;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.BLOCKED_USERSTORE_DOMAINS_SEPARATOR;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.DEFAULT_EXPIRY_TIME;
@@ -96,6 +98,8 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
     private static final String IS_API_BASED = "IS_API_BASED";
     private static final String AUTHENTICATOR_MESSAGE = "authenticatorMessage";
     private static final String EMAIL_SENDING_FAILED = "emailSendingFailed";
+
+    private static boolean isRetryEnabled = false;
 
     /**
      * Processes the authentication or logout flow for the Authenticator.
@@ -196,6 +200,14 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                         e.getMessage(), user, e);
             }
         } else {
+            // If this is a retry due to a locked user, redirect to the error page and stop further processing.
+            if (context.isRetrying() && Boolean.parseBoolean(
+                    String.valueOf(context.getProperty(ACCOUNT_LOCKED)))) {
+                MagicLinkAuthUtils.redirectToErrorPageForLockedUser(response, context);
+                isRetryEnabled = false;
+                return;
+            }
+
             User user = getUser(context.getLastAuthenticatedUser(), context);
             if (user != null) {
                 MagicLinkAuthContextData magicLinkAuthContextData = new MagicLinkAuthContextData();
@@ -292,6 +304,15 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
                 AuthenticatedUser authenticatedUser =
                         AuthenticatedUser.createLocalAuthenticatedUserFromSubjectIdentifier(
                                 magicLinkAuthContextData.getUser().getFullQualifiedUsername());
+                if (MagicLinkAuthUtils.isAccountLocked(authenticatedUser)) {
+                        context.setProperty(ACCOUNT_LOCKED, true);
+                        isRetryEnabled = true;
+                        String error = String.format(
+                                MagicLinkAuthErrorConstants.ErrorMessages.ERROR_USER_ACCOUNT_LOCKED.getMessage(),
+                                MagicLinkAuthUtils.maskUsernameIfRequired(authenticatedUser.getUserName()));
+                        throw new AuthenticationFailedException(
+                                MagicLinkAuthErrorConstants.ErrorMessages.ERROR_USER_ACCOUNT_LOCKED.getCode(), error);
+                }
                 context.setSubject(authenticatedUser);
                 MagicLinkAuthContextCache.getInstance().clearCacheEntry(magicLinkAuthContextCacheKey);
             } else {
@@ -318,7 +339,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
     @Override
     protected boolean retryAuthenticationEnabled() {
 
-        return false;
+        return isRetryEnabled;
     }
 
     /**

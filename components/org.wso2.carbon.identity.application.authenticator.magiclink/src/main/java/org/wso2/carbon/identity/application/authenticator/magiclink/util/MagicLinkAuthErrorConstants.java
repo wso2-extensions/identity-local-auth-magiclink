@@ -32,8 +32,16 @@ public class MagicLinkAuthErrorConstants {
         // Identifier related Error codes.
         EMPTY_USERNAME("BAS-60002", "Username is empty."),
 
-        // IO related Error codes
-        SYSTEM_ERROR_WHILE_AUTHENTICATING("BAS-65001", "System error while authenticating");
+        // IO related Error codes.
+        SYSTEM_ERROR_WHILE_AUTHENTICATING("65001", "System error while authenticating"),
+        ERROR_CODE_ERROR_REDIRECTING_TO_ERROR_PAGE("65014",
+                "Error occurred while redirecting to the error page"),
+
+        //Account locked error code.
+        ERROR_USER_ACCOUNT_LOCKED("65002", "Account is locked for the user: %s"),
+        ERROR_GETTING_ACCOUNT_LOCKED_STATE("65018", "Error occurred while checking the " +
+                "account locked state for the user: %s");
+
 
         private final String code;
         private final String message;
