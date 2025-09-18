@@ -74,6 +74,7 @@ public class MagicLinkExecutor extends AuthenticationExecutor {
     public static final String PORTAL_URL = "portalUrl";
     public static final String MAGIC_LINK_SIGN_UP_TEMPLATE = "magicLinkSignUp";
     public static final String MAGIC_LINK_PASSWORD_RECOVERY_TEMPLATE = "magicLinkPasswordRecovery";
+    public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Override
     public String getName() {
@@ -147,7 +148,6 @@ public class MagicLinkExecutor extends AuthenticationExecutor {
         attributes.put(EMAIL_ADDRESS_CLAIM, emailAddress);
         user.setAttributes(attributes);
 
-        String state = UUID.randomUUID().toString();
         if (StringUtils.isNotBlank(emailAddress)) {
             HashMap<String, Object> magicLinkExecContextData = new HashMap<>();
             String magicToken = TokenGenerator.generateToken(MagicLinkAuthenticatorConstants.TOKEN_LENGTH);
@@ -172,7 +172,7 @@ public class MagicLinkExecutor extends AuthenticationExecutor {
 
         String magicToken = context.getUserInputData().get(MLT);
         if (StringUtils.isBlank(magicToken)) {
-            return userErrorResponse(response, "Magic Link token is required for verification.");
+            return userErrorResponse(response, "{{magic.link.error.message}}");
         }
 
         MagicLinkExecutorContextData magicLinkExecContextData = getMagicLinkFromContext(context, response);
@@ -366,13 +366,10 @@ public class MagicLinkExecutor extends AuthenticationExecutor {
 
         Object value = flowExecutionContext.getProperty(MAGIC_LINK_EXECUTOR_CONTEXT);
         if (value == null) {
-            response.setResult(Constants.ExecutorStatus.STATUS_ERROR);
-            response.setErrorMessage("Magic Link is not generated.");
             return null;
         }
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        HashMap<String, Object> contextMagicLink = objectMapper.convertValue(value,
+        HashMap<String, Object> contextMagicLink = OBJECT_MAPPER.convertValue(value,
                 new TypeReference<HashMap<String, Object>>() {
                 });
 
@@ -384,8 +381,6 @@ public class MagicLinkExecutor extends AuthenticationExecutor {
         } else if (contextMagicLink.get(MagicLinkExecutorConstants.MagicLinkData.CREATED_TIMESTAMP) instanceof Long) {
             createdTimestamp = (Long) contextMagicLink.get(MagicLinkExecutorConstants.MagicLinkData.CREATED_TIMESTAMP);
         } else {
-            response.setResult(Constants.ExecutorStatus.STATUS_ERROR);
-            response.setErrorMessage("Invalid Magic Link.");
             return null;
         }
 
