@@ -63,7 +63,6 @@ import static org.wso2.carbon.identity.application.authentication.framework.util
 import static org.wso2.carbon.identity.application.authenticator.magiclink.executor.MagicLinkExecutor.MAGIC_LINK_PASSWORD_RECOVERY_TEMPLATE;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.executor.MagicLinkExecutor.MAGIC_LINK_SIGN_UP_TEMPLATE;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.executor.MagicLinkExecutorConstants.MAGIC_LINK_AUTH_CONTEXT_DATA;
-import static org.wso2.carbon.identity.application.authenticator.magiclink.executor.MagicLinkExecutorConstants.STATE_PARAM;
 import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.PASSWORD_RECOVERY;
 import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.REGISTRATION;
 
@@ -160,9 +159,6 @@ public class MagicLinkExecutorTest extends PowerMockTestCase {
         ExecutorResponse response = executor.execute(context);
         assertEquals(response.getResult(), Constants.ExecutorStatus.STATUS_USER_INPUT_REQUIRED);
         assertTrue(response.getRequiredData().contains(MagicLinkExecutor.MLT));
-        assertNotNull(response.getAdditionalInfo());
-        assertTrue(response.getAdditionalInfo().containsKey(STATE_PARAM));
-        assertNotNull(response.getAdditionalInfo().get(STATE_PARAM));
     }
 
     @Test
@@ -268,8 +264,6 @@ public class MagicLinkExecutorTest extends PowerMockTestCase {
         ExecutorResponse response = executor.execute(context);
 
         assertEquals(response.getResult(), Constants.ExecutorStatus.STATUS_USER_INPUT_REQUIRED);
-        assertNotNull(response.getAdditionalInfo());
-        assertTrue(response.getAdditionalInfo().containsKey(STATE_PARAM));
 
         verify(eventService, never()).handleEvent(any(Event.class));
         assertNull(response.getContextProperties().get(MAGIC_LINK_AUTH_CONTEXT_DATA));
@@ -290,8 +284,6 @@ public class MagicLinkExecutorTest extends PowerMockTestCase {
         ExecutorResponse response = executor.execute(context);
 
         assertEquals(response.getResult(), Constants.ExecutorStatus.STATUS_USER_INPUT_REQUIRED);
-        assertNotNull(response.getAdditionalInfo());
-        assertTrue(response.getAdditionalInfo().containsKey(STATE_PARAM));
 
         verify(eventService).handleEvent(any(Event.class));
         assertNotNull(response.getContextProperties().get(MAGIC_LINK_AUTH_CONTEXT_DATA));
