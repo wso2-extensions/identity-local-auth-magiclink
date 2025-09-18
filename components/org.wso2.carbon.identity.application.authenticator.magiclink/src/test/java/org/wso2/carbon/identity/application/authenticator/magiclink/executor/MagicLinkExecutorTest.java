@@ -197,7 +197,7 @@ public class MagicLinkExecutorTest extends PowerMockTestCase {
         prepareVerificationContext(true, -999999L);
         ExecutorResponse response = executor.execute(context);
         assertEquals(response.getResult(), Constants.ExecutorStatus.STATUS_USER_ERROR);
-        assertTrue(response.getErrorMessage().contains("expired"));
+        assertTrue(response.getErrorMessage().contains("magic.link.error.message"));
     }
 
     @Test

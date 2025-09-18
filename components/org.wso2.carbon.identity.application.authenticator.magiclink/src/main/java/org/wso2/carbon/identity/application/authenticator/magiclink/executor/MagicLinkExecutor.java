@@ -187,15 +187,15 @@ public class MagicLinkExecutor extends AuthenticationExecutor {
 
         MagicLinkExecutorContextData magicLinkExecContextData = getMagicLinkFromContext(context, response);
         if (magicLinkExecContextData == null) {
-            return userErrorResponse(response, "Invalid or expired magic link token.");
+            return userErrorResponse(response, "{{magic.link.error.message}}");
         }
 
         if (!isMagicTokenValid(magicLinkExecContextData)) {
-            return userErrorResponse(response, "Magic link token has expired.");
+            return userErrorResponse(response, "{{magic.link.error.message}}");
         }
 
         if (!magicToken.equals(magicLinkExecContextData.getMagicToken())) {
-            return userErrorResponse(response, "Invalid or expired magic link token.");
+            return userErrorResponse(response, "{{magic.link.error.message}}");
         }
 
         DiagnosticLog.DiagnosticLogBuilder diagnosticLogBuilder = null;
