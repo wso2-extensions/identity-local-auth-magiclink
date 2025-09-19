@@ -112,6 +112,11 @@
                 <artifactId>org.wso2.carbon.identity.flow.execution.engine</artifactId>
                 <version>${carbon.identity.framework.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.event.handler.accountlock</groupId>
+                <artifactId>org.wso2.carbon.identity.handler.event.account.lock</artifactId>
+                <version>${carbon.identity.handler.event.account.lock.version}</version>
+            </dependency>
 
             <!--Test Dependencies-->
             <dependency>
@@ -305,6 +310,7 @@
         <org.wso2.carbon.identity.organization.management.core.version>1.0.55
         </org.wso2.carbon.identity.organization.management.core.version>
         <owasp.encoder.version>1.2.0.wso2v1</owasp.encoder.version>
+        <carbon.identity.handler.event.account.lock.version>1.9.12</carbon.identity.handler.event.account.lock.version>
 
         <!--Test Dependencies-->
         <testng.version>6.9.10</testng.version>
@@ -324,6 +330,7 @@
         <carbon.kernel.imp.pkg.version.range>[4.5.0, 5.0.0)</carbon.kernel.imp.pkg.version.range>
         <carbon.user.api.imp.pkg.version.range>[1.0.1, 2.0.0)</carbon.user.api.imp.pkg.version.range>
         <identity.governance.imp.pkg.version.range>[1.5.0, 3.0.0)</identity.governance.imp.pkg.version.range>
+        <carbon.identity.account.lock.handler.imp.pkg.version.range>[1.1.12, 3.0.0)</carbon.identity.account.lock.handler.imp.pkg.version.range>
         <encoder.wso2.import.version.range>[1.2.0, 2.0.0)</encoder.wso2.import.version.range>
 
         <findbugs-maven-plugin.version>3.0.5</findbugs-maven-plugin.version>

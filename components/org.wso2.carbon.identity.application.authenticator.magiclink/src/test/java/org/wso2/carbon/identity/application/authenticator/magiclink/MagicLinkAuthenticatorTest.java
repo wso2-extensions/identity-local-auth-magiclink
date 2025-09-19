@@ -56,6 +56,7 @@ import org.wso2.carbon.identity.core.ServiceURLBuilder;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
+import org.wso2.carbon.identity.handler.event.account.lock.service.AccountLockService;
 import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.common.User;
@@ -124,6 +125,9 @@ public class MagicLinkAuthenticatorTest {
 
     @Mock
     private IdentityEventService mockIdentityEventService;
+
+    @Mock
+    private AccountLockService mockAccountLockService;
 
     @Mock
     private UserRealm mockUserRealm;
@@ -306,6 +310,8 @@ public class MagicLinkAuthenticatorTest {
         user.setTenantDomain(SUPER_TENANT_DOMAIN);
         magicLinkAuthContextData.setUser(user);
         magicLinkAuthContextData.setSessionDataKey(UUID.randomUUID().toString());
+
+        MagicLinkServiceDataHolder.getInstance().setAccountLockService(mockAccountLockService);
 
         MagicLinkAuthContextCacheKey cacheKey = new MagicLinkAuthContextCacheKey(DUMMY_MAGIC_TOKEN);
         MagicLinkAuthContextCacheEntry cacheEntry = new MagicLinkAuthContextCacheEntry(magicLinkAuthContextData);

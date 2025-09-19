@@ -34,6 +34,7 @@ import org.wso2.carbon.identity.auth.attribute.handler.AuthAttributeHandler;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.flow.execution.engine.graph.Executor;
+import org.wso2.carbon.identity.handler.event.account.lock.service.AccountLockService;
 import org.wso2.carbon.user.core.service.RealmService;
 
 /**
@@ -120,5 +121,22 @@ public class MagicLinkAuthenticatorServiceComponent {
     protected void unsetIdentityEventService(IdentityEventService eventService) {
 
         MagicLinkServiceDataHolder.getInstance().setIdentityEventService(null);
+    }
+
+    @Reference(
+            name = "AccountLockService",
+            service = org.wso2.carbon.identity.handler.event.account.lock.service.AccountLockService.class,
+            cardinality = ReferenceCardinality.MANDATORY,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetAccountLockService"
+    )
+    protected void setAccountLockService(AccountLockService accountLockService) {
+
+        MagicLinkServiceDataHolder.getInstance().setAccountLockService(accountLockService);
+    }
+
+    protected void unsetAccountLockService(AccountLockService accountLockService) {
+
+        MagicLinkServiceDataHolder.getInstance().setAccountLockService(null);
     }
 }
