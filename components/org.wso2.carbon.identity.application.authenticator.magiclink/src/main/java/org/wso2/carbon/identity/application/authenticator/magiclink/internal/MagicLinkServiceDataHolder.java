@@ -91,7 +91,8 @@ public class MagicLinkServiceDataHolder {
     public AccountLockService getAccountLockService() {
 
         if (accountLockService == null) {
-            throw new RuntimeException("AccountLockService was not set during the Email OTP service component startup");
+            throw new RuntimeException("AccountLockService was not set during the " +
+                    "Magic Link Authenticator component startup");
         }
         return accountLockService;
     }
