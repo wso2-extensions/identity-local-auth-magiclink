@@ -94,29 +94,10 @@ public class MagicLinkExecutor extends AuthenticationExecutor {
         ExecutorResponse response = new ExecutorResponse();
         Map<String, Object> contextProperties = new HashMap<>();
         response.setContextProperty(contextProperties);
-        try {
-            validateRequiredData(context);
-            if (isInitiation(context, response)) {
-                return initiateMagicLink(context, response);
-            } else {
-                return processMagicLink(context, response);
-            }
-        } catch (FlowEngineException e) {
-            String errorMsg = "Error occurred while executing the " + context.getFlowType()
-                    + "flow in " + getName() + ".";
-            DiagnosticLog.DiagnosticLogBuilder diagnosticLogBuilder = null;
-            if (LoggerUtils.isDiagnosticLogsEnabled()) {
-                diagnosticLogBuilder = new DiagnosticLog.DiagnosticLogBuilder(MAGIC_LINK_AUTH_SERVICE,
-                        PROCESS_MAGIC_LINK);
-                diagnosticLogBuilder.logDetailLevel(DiagnosticLog.LogDetailLevel.APPLICATION)
-                        .inputParam(LogConstants.InputKeys.USER, LoggerUtils.isLogMaskingEnable ?
-                                LoggerUtils.getMaskedContent(context.getFlowUser().getUsername()) :
-                                context.getFlowUser().getUsername());
-                diagnosticLogBuilder.resultMessage(errorMsg)
-                        .resultStatus(DiagnosticLog.ResultStatus.FAILED);
-                LoggerUtils.triggerDiagnosticLogEvent(diagnosticLogBuilder);
-            }
-            return serverErrorResponse(response, errorMsg + " " + e.getMessage());
+        if (isInitiation(context, response)) {
+            return initiateMagicLink(context, response);
+        } else {
+            return processMagicLink(context, response);
         }
     }
 
@@ -124,7 +105,6 @@ public class MagicLinkExecutor extends AuthenticationExecutor {
     public List<String> getInitiationData() {
 
         List<String> initiationData = new ArrayList<>();
-        initiationData.add(USERNAME_CLAIM);
         initiationData.add(EMAIL_ADDRESS_CLAIM);
         return initiationData;
     }
@@ -139,6 +119,16 @@ public class MagicLinkExecutor extends AuthenticationExecutor {
 
         String username = context.getFlowUser().getUsername();
         String emailAddress = (String) context.getFlowUser().getClaim(EMAIL_ADDRESS_CLAIM);
+
+        if (!context.getFlowUser().isCredentialsManagedLocally() || context.getFlowUser().isAccountLocked() ||
+        context.getFlowUser().isAccountDisabled()) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Magic link is not triggered for the user: " + (LoggerUtils.isLogMaskingEnable ?
+                        LoggerUtils.getMaskedContent(username) : username) + ". User account is either locked, " +
+                        "disabled or credentials are not managed locally.");
+            }
+            return userInputRequiredResponse(response, MLT);
+        }
 
         User user = new User();
         user.setUsername(username);
@@ -262,21 +252,6 @@ public class MagicLinkExecutor extends AuthenticationExecutor {
 
         return context.getUserInputData().get(MLT) == null &&
                 getMagicLinkFromContext(context, response) == null;
-    }
-
-    private void validateRequiredData(FlowExecutionContext context) throws FlowEngineException {
-
-        // Skip username and email validation for password recovery flow to avoid user enumeration.
-        if (StringUtils.equals(context.getFlowType(), String.valueOf(PASSWORD_RECOVERY))) {
-            return;
-        }
-
-        if (StringUtils.isBlank(context.getFlowUser().getUsername())) {
-            throw new FlowEngineClientException("Username is required for Magic Link registration.");
-        }
-        if (context.getFlowUser().getClaim(EMAIL_ADDRESS_CLAIM) == null) {
-            throw new FlowEngineClientException("Email address is required for Magic Link registration.");
-        }
     }
 
     private ExecutorResponse userInputRequiredResponse(ExecutorResponse response, String... fields) {
