@@ -132,24 +132,68 @@ public class MagicLinkExecutorTest extends PowerMockTestCase {
     public void testGetInitiationData() {
 
         List<String> data = executor.getInitiationData();
-        assertEquals(data.size(), 2);
-        assertTrue(data.contains(USERNAME_CLAIM));
+        assertEquals(data.size(), 1);
         assertTrue(data.contains(EMAIL_ADDRESS_CLAIM));
     }
 
-    @Test(expectedExceptions = FlowEngineClientException.class)
-    public void testExecuteThrowsWhenUsernameMissing() throws FlowEngineException {
-
-        when(flowUser.getUsername()).thenReturn(null);
-        executor.execute(context);
-    }
-
-    @Test(expectedExceptions = FlowEngineClientException.class)
-    public void testExecuteThrowsWhenEmailMissing() throws FlowEngineException {
+    @Test
+    public void testExecuteWithNonLocallyManagedCredentials() throws Exception {
 
         when(flowUser.getUsername()).thenReturn(TEST_USERNAME);
-        when(flowUser.getClaim(EMAIL_ADDRESS_CLAIM)).thenReturn(null);
-        executor.execute(context);
+        when(flowUser.getClaim(EMAIL_ADDRESS_CLAIM)).thenReturn(TEST_EMAIL);
+        when(flowUser.isCredentialsManagedLocally()).thenReturn(false);
+        when(context.getTenantDomain()).thenReturn(TEST_TENANT);
+        when(context.getContextIdentifier()).thenReturn(TEST_CONTEXT_ID);
+        when(context.getPortalUrl()).thenReturn("https://portal");
+        when(context.getFlowType()).thenReturn("signup");
+        when(context.getUserInputData()).thenReturn(new HashMap<>());
+        when(context.getProperties()).thenReturn(new HashMap<>());
+
+        ExecutorResponse response = executor.execute(context);
+        assertEquals(response.getResult(), Constants.ExecutorStatus.STATUS_USER_INPUT_REQUIRED);
+        assertTrue(response.getRequiredData().contains(MagicLinkExecutor.MLT));
+        verify(eventService, never()).handleEvent(any(Event.class));
+    }
+
+    @Test
+    public void testExecuteWithLockedAccount() throws Exception {
+
+        when(flowUser.getUsername()).thenReturn(TEST_USERNAME);
+        when(flowUser.getClaim(EMAIL_ADDRESS_CLAIM)).thenReturn(TEST_EMAIL);
+        when(flowUser.isCredentialsManagedLocally()).thenReturn(true);
+        when(flowUser.isAccountLocked()).thenReturn(true);
+        when(context.getTenantDomain()).thenReturn(TEST_TENANT);
+        when(context.getContextIdentifier()).thenReturn(TEST_CONTEXT_ID);
+        when(context.getPortalUrl()).thenReturn("https://portal");
+        when(context.getFlowType()).thenReturn("signup");
+        when(context.getUserInputData()).thenReturn(new HashMap<>());
+        when(context.getProperties()).thenReturn(new HashMap<>());
+
+        ExecutorResponse response = executor.execute(context);
+        assertEquals(response.getResult(), Constants.ExecutorStatus.STATUS_USER_INPUT_REQUIRED);
+        assertTrue(response.getRequiredData().contains(MagicLinkExecutor.MLT));
+        verify(eventService, never()).handleEvent(any(Event.class));
+    }
+
+    @Test
+    public void testExecuteWithDisabledAccount() throws Exception {
+
+        when(flowUser.getUsername()).thenReturn(TEST_USERNAME);
+        when(flowUser.getClaim(EMAIL_ADDRESS_CLAIM)).thenReturn(TEST_EMAIL);
+        when(flowUser.isCredentialsManagedLocally()).thenReturn(true);
+        when(flowUser.isAccountLocked()).thenReturn(false);
+        when(flowUser.isAccountDisabled()).thenReturn(true);
+        when(context.getTenantDomain()).thenReturn(TEST_TENANT);
+        when(context.getContextIdentifier()).thenReturn(TEST_CONTEXT_ID);
+        when(context.getPortalUrl()).thenReturn("https://portal");
+        when(context.getFlowType()).thenReturn("signup");
+        when(context.getUserInputData()).thenReturn(new HashMap<>());
+        when(context.getProperties()).thenReturn(new HashMap<>());
+
+        ExecutorResponse response = executor.execute(context);
+        assertEquals(response.getResult(), Constants.ExecutorStatus.STATUS_USER_INPUT_REQUIRED);
+        assertTrue(response.getRequiredData().contains(MagicLinkExecutor.MLT));
+        verify(eventService, never()).handleEvent(any(Event.class));
     }
 
     @Test
@@ -245,6 +289,9 @@ public class MagicLinkExecutorTest extends PowerMockTestCase {
 
         when(flowUser.getUsername()).thenReturn(TEST_USERNAME);
         when(flowUser.getClaim(EMAIL_ADDRESS_CLAIM)).thenReturn(null);
+        when(flowUser.isCredentialsManagedLocally()).thenReturn(true);
+        when(flowUser.isAccountLocked()).thenReturn(false);
+        when(flowUser.isAccountDisabled()).thenReturn(false);
         when(context.getTenantDomain()).thenReturn(TEST_TENANT);
         when(context.getContextIdentifier()).thenReturn(TEST_CONTEXT_ID);
         when(context.getPortalUrl()).thenReturn("https://portal");
@@ -265,6 +312,9 @@ public class MagicLinkExecutorTest extends PowerMockTestCase {
 
         when(flowUser.getUsername()).thenReturn(TEST_USERNAME);
         when(flowUser.getClaim(EMAIL_ADDRESS_CLAIM)).thenReturn(TEST_EMAIL);
+        when(flowUser.isCredentialsManagedLocally()).thenReturn(true);
+        when(flowUser.isAccountLocked()).thenReturn(false);
+        when(flowUser.isAccountDisabled()).thenReturn(false);
         when(context.getTenantDomain()).thenReturn(TEST_TENANT);
         when(context.getContextIdentifier()).thenReturn(TEST_CONTEXT_ID);
         when(context.getPortalUrl()).thenReturn("https://portal");
@@ -284,6 +334,9 @@ public class MagicLinkExecutorTest extends PowerMockTestCase {
 
         when(flowUser.getUsername()).thenReturn(TEST_USERNAME);
         when(flowUser.getClaim(EMAIL_ADDRESS_CLAIM)).thenReturn(TEST_EMAIL);
+        when(flowUser.isCredentialsManagedLocally()).thenReturn(true);
+        when(flowUser.isAccountLocked()).thenReturn(false);
+        when(flowUser.isAccountDisabled()).thenReturn(false);
         when(context.getTenantDomain()).thenReturn(TEST_TENANT);
         when(context.getContextIdentifier()).thenReturn(TEST_CONTEXT_ID);
         when(context.getPortalUrl()).thenReturn("https://portal");
