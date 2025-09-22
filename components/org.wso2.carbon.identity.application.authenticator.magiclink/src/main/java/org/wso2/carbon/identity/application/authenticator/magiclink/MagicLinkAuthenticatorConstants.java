@@ -48,6 +48,14 @@ public abstract class MagicLinkAuthenticatorConstants {
     public static final String USERNAME_PARAM = "username.param";
     public static final String MAGIC_LINK_CODE = "magic.link.code.param";
     public static final String USER_PROMPT = "USER_PROMPT";
+    public static final String ACCOUNT_LOCKED = "isAccountLocked";
+
+    // Endpoint URLs.
+    public static final String ERROR_PAGE = "authenticationendpoint/magic_link_error.jsp";
+
+    // Query params.
+    public static final String ERROR_USER_ACCOUNT_LOCKED_QUERY_PARAMS =
+            "&authFailure=true&authFailureMsg=user.account.locked";
 
     // Default expiry time in seconds.
     public static final long DEFAULT_EXPIRY_TIME = 300;

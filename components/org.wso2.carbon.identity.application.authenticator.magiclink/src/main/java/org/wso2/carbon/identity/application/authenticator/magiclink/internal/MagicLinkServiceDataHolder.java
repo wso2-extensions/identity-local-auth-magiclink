@@ -19,6 +19,7 @@ package org.wso2.carbon.identity.application.authenticator.magiclink.internal;
 
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
+import org.wso2.carbon.identity.handler.event.account.lock.service.AccountLockService;
 import org.wso2.carbon.user.core.service.RealmService;
 
 /**
@@ -31,6 +32,7 @@ public class MagicLinkServiceDataHolder {
     private IdentityEventService identityEventService;
     private RealmService realmService;
     private IdentityGovernanceService identityGovernanceService;
+    private static AccountLockService accountLockService;
 
     private MagicLinkServiceDataHolder() {
 
@@ -79,5 +81,29 @@ public class MagicLinkServiceDataHolder {
     public void setIdentityGovernanceService(IdentityGovernanceService identityGovernanceService) {
 
         this.identityGovernanceService = identityGovernanceService;
+    }
+
+    /**
+     * Get Account Lock service.
+     *
+     * @return Account Lock service.
+     */
+    public AccountLockService getAccountLockService() {
+
+        if (accountLockService == null) {
+            throw new RuntimeException("AccountLockService was not set during the " +
+                    "Magic Link Authenticator component startup");
+        }
+        return accountLockService;
+    }
+
+    /**
+     * Set Account Lock service.
+     *
+     * @param accountLockService Account Lock service.
+     */
+    public void setAccountLockService(AccountLockService accountLockService) {
+
+        this.accountLockService = accountLockService;
     }
 }

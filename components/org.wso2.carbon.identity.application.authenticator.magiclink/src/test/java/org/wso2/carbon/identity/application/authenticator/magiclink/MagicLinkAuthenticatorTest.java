@@ -56,6 +56,8 @@ import org.wso2.carbon.identity.core.ServiceURLBuilder;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
+import org.wso2.carbon.identity.handler.event.account.lock.exception.AccountLockServiceException;
+import org.wso2.carbon.identity.handler.event.account.lock.service.AccountLockService;
 import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.common.User;
@@ -83,9 +85,14 @@ import static org.powermock.api.mockito.PowerMockito.doThrow;
 import static org.powermock.api.mockito.PowerMockito.mock;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertThrows;
+import static org.testng.Assert.assertTrue;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.USERNAME_CLAIM;
+import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.ACCOUNT_LOCKED;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.DISPLAY_USER_NAME;
+import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.ERROR_PAGE;
+import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.ERROR_USER_ACCOUNT_LOCKED_QUERY_PARAMS;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.USERNAME_PARAM;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.USER_NAME;
 
@@ -124,6 +131,9 @@ public class MagicLinkAuthenticatorTest {
 
     @Mock
     private IdentityEventService mockIdentityEventService;
+
+    @Mock
+    private AccountLockService mockAccountLockService;
 
     @Mock
     private UserRealm mockUserRealm;
@@ -255,12 +265,6 @@ public class MagicLinkAuthenticatorTest {
         Assert.assertEquals(magicLinkAuthenticator.getName(), MagicLinkAuthenticatorConstants.AUTHENTICATOR_NAME);
     }
 
-    @Test(description = "Test case for retryAuthenticationEnabled() method.")
-    public void testRetryAuthenticationEnabled() {
-
-        Assert.assertEquals(magicLinkAuthenticator.retryAuthenticationEnabled(), false);
-    }
-
     @DataProvider
     public Object[][] getInitiateAuthenticationRequestExceptionData() {
 
@@ -306,6 +310,8 @@ public class MagicLinkAuthenticatorTest {
         user.setTenantDomain(SUPER_TENANT_DOMAIN);
         magicLinkAuthContextData.setUser(user);
         magicLinkAuthContextData.setSessionDataKey(UUID.randomUUID().toString());
+
+        MagicLinkServiceDataHolder.getInstance().setAccountLockService(mockAccountLockService);
 
         MagicLinkAuthContextCacheKey cacheKey = new MagicLinkAuthContextCacheKey(DUMMY_MAGIC_TOKEN);
         MagicLinkAuthContextCacheEntry cacheEntry = new MagicLinkAuthContextCacheEntry(magicLinkAuthContextData);
@@ -596,5 +602,95 @@ public class MagicLinkAuthenticatorTest {
             Assert.assertEquals(actualParam.isConfidential(), expectedParam.isConfidential(),
                     "Parameter confidential status should match.");
         }
+    }
+
+
+    @Test(description = "Test case for processAuthenticationResponse() method when the user account is locked.")
+    public void testProcessAuthenticationResponseForLockedUser() throws Exception {
+
+        when(httpServletRequest.getParameter(MagicLinkAuthenticatorConstants.MAGIC_LINK_TOKEN)).thenReturn(
+                DUMMY_MAGIC_TOKEN);
+        mockStatic(MagicLinkAuthContextCache.class);
+        when(MagicLinkAuthContextCache.getInstance()).thenReturn(mockMagicLinkAuthContextCache);
+
+        mockStatic(IdentityUtil.class);
+        mockStatic(MultitenantUtils.class);
+        MagicLinkServiceDataHolder.getInstance().setRealmService(mockRealmService);
+        when(IdentityUtil.getPrimaryDomainName()).thenReturn(USER_STORE_DOMAIN);
+        when(MultitenantUtils.getTenantAwareUsername(anyString())).thenReturn(USERNAME_WITH_TENANT_DOMAIN);
+        when(MultitenantUtils.getTenantDomain(anyString())).thenReturn(SUPER_TENANT_DOMAIN);
+
+        MagicLinkAuthContextData magicLinkAuthContextData = new MagicLinkAuthContextData();
+        magicLinkAuthContextData.setMagicToken(DUMMY_MAGIC_TOKEN);
+        magicLinkAuthContextData.setCreatedTimestamp(System.currentTimeMillis());
+        User user = new User(UUID.randomUUID().toString(), USERNAME, null);
+        user.setUserStoreDomain(USER_STORE_DOMAIN);
+        user.setTenantDomain(SUPER_TENANT_DOMAIN);
+        user.setUserID(UUID.randomUUID().toString());
+        magicLinkAuthContextData.setUser(user);
+        magicLinkAuthContextData.setSessionDataKey(UUID.randomUUID().toString());
+
+        MagicLinkServiceDataHolder.getInstance().setAccountLockService(mockAccountLockService);
+        when(mockAccountLockService.isAccountLocked(
+                USERNAME_WITH_TENANT_DOMAIN, SUPER_TENANT_DOMAIN, USER_STORE_DOMAIN)).thenReturn(true);
+
+        MagicLinkAuthContextCacheKey cacheKey = new MagicLinkAuthContextCacheKey(DUMMY_MAGIC_TOKEN);
+        MagicLinkAuthContextCacheEntry cacheEntry = new MagicLinkAuthContextCacheEntry(magicLinkAuthContextData);
+
+        when(mockMagicLinkAuthContextCache.getValueFromCache(cacheKey)).thenReturn(cacheEntry);
+        assertThrows(AuthenticationFailedException.class,
+                () -> magicLinkAuthenticator.processAuthenticationResponse(httpServletRequest, httpServletResponse,
+                        context));
+        assertTrue(magicLinkAuthenticator.retryAuthenticationEnabled());
+
+        when(mockAccountLockService.isAccountLocked(anyString(), anyString(), anyString()))
+                .thenThrow(new AccountLockServiceException("Error occurred while checking account lock status"));
+        assertThrows(AuthenticationFailedException.class,
+                () -> magicLinkAuthenticator.processAuthenticationResponse(httpServletRequest, httpServletResponse,
+                        context));
+    }
+
+    @Test(description = "Test case for initiateAuthenticationRequest() method when the user account is locked.")
+    public void testInitiateAuthenticationRequestWithLockedUser() throws Exception {
+
+        mockStatic(IdentityUtil.class);
+        MagicLinkServiceDataHolder.getInstance().setRealmService(mockRealmService);
+        when(IdentityUtil.getPrimaryDomainName()).thenReturn(USER_STORE_DOMAIN);
+        when(IdentityTenantUtil.getTenantId(SUPER_TENANT_DOMAIN)).thenReturn(-1234);
+        AuthenticatedUser authenticatedUser = AuthenticatedUser.createLocalAuthenticatedUserFromSubjectIdentifier(
+                USERNAME);
+        authenticatedUser.setFederatedUser(false);
+        authenticatedUser.setUserName(USERNAME);
+        context.setTenantDomain(SUPER_TENANT_DOMAIN);
+        context.setProperty("username", INVALID_USERNAME);
+        context.setProperty("authenticatedUser", authenticatedUser);
+        context.setContextIdentifier(UUID.randomUUID().toString());
+        context.setRetrying(true);
+        context.setProperty(ACCOUNT_LOCKED, true);
+        context.setCallerSessionKey(UUID.randomUUID().toString());
+        context.setQueryParams(DUMMY_QUERY_PARAMS);
+        when(context.getLastAuthenticatedUser()).thenReturn(authenticatedUser);
+        when(FrameworkUtils.getQueryStringWithFrameworkContextId(context.getQueryParams(),
+                context.getCallerSessionKey(), context.getContextIdentifier())).thenReturn(DUMMY_QUERY_PARAMS);
+        when(FrameworkUtils.appendQueryParamsStringToUrl(DEFAULT_SERVER_URL + "/" + ERROR_PAGE,
+                DUMMY_QUERY_PARAMS + ERROR_USER_ACCOUNT_LOCKED_QUERY_PARAMS)).thenReturn(
+                DEFAULT_SERVER_URL + "/" + ERROR_PAGE + "?" + DUMMY_QUERY_PARAMS +
+                        ERROR_USER_ACCOUNT_LOCKED_QUERY_PARAMS);
+
+        mockServiceURLBuilder();
+        List<User> userList = new ArrayList<>();
+        when(mockRealmService.getTenantUserRealm(anyInt())).thenReturn(mockUserRealm);
+        when(mockUserRealm.getUserStoreManager()).thenReturn(mockUserStoreManager);
+        when(mockUserStoreManager.getUserListWithID(USERNAME_CLAIM, INVALID_USERNAME, null)).thenReturn(userList);
+
+        doAnswer((Answer<Object>) invocation -> {
+            redirect = (String) invocation.getArguments()[0];
+            return null;
+        }).when(httpServletResponse).sendRedirect(anyString());
+
+        magicLinkAuthenticator.initiateAuthenticationRequest(httpServletRequest, httpServletResponse, context);
+        assertEquals(redirect, DEFAULT_SERVER_URL + "/" + ERROR_PAGE + "?" + DUMMY_QUERY_PARAMS +
+                ERROR_USER_ACCOUNT_LOCKED_QUERY_PARAMS);
+        assertFalse(magicLinkAuthenticator.retryAuthenticationEnabled());
     }
 }
