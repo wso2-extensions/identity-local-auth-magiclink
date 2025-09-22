@@ -121,7 +121,7 @@ public class MagicLinkExecutor extends AuthenticationExecutor {
         String emailAddress = (String) context.getFlowUser().getClaim(EMAIL_ADDRESS_CLAIM);
 
         if (!context.getFlowUser().isCredentialsManagedLocally() || context.getFlowUser().isAccountLocked() ||
-        context.getFlowUser().isAccountDisabled()) {
+                context.getFlowUser().isAccountDisabled()) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Magic link is not triggered for the user: " + (LoggerUtils.isLogMaskingEnable ?
                         LoggerUtils.getMaskedContent(username) : username) + ". User account is either locked, " +
