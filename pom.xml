@@ -27,7 +27,7 @@
     <groupId>org.wso2.carbon.identity.local.auth.magiclink</groupId>
     <artifactId>identity-local-auth-magiclink</artifactId>
     <packaging>pom</packaging>
-    <version>1.1.44-SNAPSHOT</version>
+    <version>1.1.43</version>
     <name>WSO2 Carbon - MagicLink Authenticator</name>
     <scm>
         <url>https://github.com/wso2-extensions/identity-local-auth-magiclink.git</url>
@@ -299,7 +299,7 @@
         <identity.application.authenticator.magiclink.exp.pkg.version>${project.version}
         </identity.application.authenticator.magiclink.exp.pkg.version>
         <carbon.kernel.version>4.9.10</carbon.kernel.version>
-        <carbon.identity.framework.version>7.8.499</carbon.identity.framework.version>
+        <carbon.identity.framework.version>7.8.519</carbon.identity.framework.version>
         <apache.felix.scr.ds.annotations.version>1.2.10</apache.felix.scr.ds.annotations.version>
         <identity.event.handler.notification.version>1.9.59</identity.event.handler.notification.version>
         <identity.inbound.auth.oauth.version>6.11.172</identity.inbound.auth.oauth.version>
