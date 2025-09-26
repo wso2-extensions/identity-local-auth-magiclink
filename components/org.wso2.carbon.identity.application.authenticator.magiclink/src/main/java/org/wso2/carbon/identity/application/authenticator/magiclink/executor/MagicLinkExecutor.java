@@ -52,6 +52,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import static org.wso2.carbon.identity.flow.execution.engine.Constants.OTFI;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.EMAIL_ADDRESS_CLAIM;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.USERNAME_CLAIM;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.MagicLinkAuthenticatorConstants.DEFAULT_EXPIRY_TIME;
@@ -152,7 +153,16 @@ public class MagicLinkExecutor extends AuthenticationExecutor {
 
             String expiryTime =
                     TimeUnit.SECONDS.toMinutes(getExpiryTime()) + " " + TimeUnit.MINUTES.name().toLowerCase();
-            magicToken = magicToken + "&" + "flowId=" + context.getContextIdentifier();
+
+            String otfi = UUID.randomUUID().toString();
+            // Make sure the generated OTFI is different from the current flow ID.
+            while (otfi.equals(context.getContextIdentifier())){
+                otfi = UUID.randomUUID().toString();
+            }
+            Map<String, Object> otfiProperties = new HashMap<>();
+            otfiProperties.put(OTFI, otfi);
+            context.addProperties(otfiProperties);
+            magicToken = magicToken + "&" + "flowId=" + otfi;
             triggerEvent(context, user, magicToken, expiryTime, context.getPortalUrl());
         }
         return userInputRequiredResponse(response, MLT);
