@@ -554,7 +554,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
 
         String username = validateIdentifierFromRequest(request, context);
         validateEmailUsername(username, context);
-        username = FrameworkUtils.preprocessUsername(username, context);
+        username = FrameworkUtils.preprocessUsernameWithContextTenantDomain(username, context);
         User user = new User();
         String tenantAwareUsername = MultitenantUtils.getTenantAwareUsername(username);
         String tenantDomain = MultitenantUtils.getTenantDomain(username);
