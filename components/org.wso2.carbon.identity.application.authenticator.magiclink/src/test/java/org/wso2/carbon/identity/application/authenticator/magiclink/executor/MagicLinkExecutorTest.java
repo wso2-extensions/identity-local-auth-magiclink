@@ -19,10 +19,9 @@
 package org.wso2.carbon.identity.application.authenticator.magiclink.executor;
 
 import org.mockito.ArgumentCaptor;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.testng.PowerMockTestCase;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.authentication.framework.config.builder.FileBasedConfigurationBuilder;
@@ -36,19 +35,16 @@ import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.flow.execution.engine.Constants;
-import org.wso2.carbon.identity.flow.execution.engine.exception.FlowEngineClientException;
-import org.wso2.carbon.identity.flow.execution.engine.exception.FlowEngineException;
 import org.wso2.carbon.identity.flow.execution.engine.model.ExecutorResponse;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionContext;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowUser;
-import org.wso2.carbon.user.core.common.User;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.anyInt;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -59,7 +55,6 @@ import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.EMAIL_ADDRESS_CLAIM;
-import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.USERNAME_CLAIM;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.executor.MagicLinkExecutor.MAGIC_LINK_PASSWORD_RECOVERY_TEMPLATE;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.executor.MagicLinkExecutor.MAGIC_LINK_SIGN_UP_TEMPLATE;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.executor.MagicLinkExecutorConstants.MAGIC_LINK_EXECUTOR_CONTEXT;
@@ -69,15 +64,7 @@ import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.REGISTRATION
 /**
  * Unit tests for the MagicLinkExecutor class.
  */
-@PrepareForTest({
-        FileBasedConfigurationBuilder.class,
-        MagicLinkServiceDataHolder.class,
-        LoggerUtils.class,
-        TokenGenerator.class
-})
-@PowerMockIgnore({"jdk.internal.reflect.*", "javax.management.*", "javax.xml.*", "javax.crypto.*", "javax.activation.*",
-        "org.xml.*", "org.w3c.*"})
-public class MagicLinkExecutorTest extends PowerMockTestCase {
+public class MagicLinkExecutorTest {
 
     private static final String TEST_USERNAME = "user";
     private static final String TEST_EMAIL = "user@test.com";
@@ -90,6 +77,11 @@ public class MagicLinkExecutorTest extends PowerMockTestCase {
     private FlowUser flowUser;
     private IdentityEventService eventService;
 
+    private MockedStatic<LoggerUtils> mockedLoggerUtils;
+    private MockedStatic<FileBasedConfigurationBuilder> mockedFileBasedConfigurationBuilder;
+    private MockedStatic<MagicLinkServiceDataHolder> mockedMagicLinkServiceDataHolder;
+    private MockedStatic<TokenGenerator> mockedTokenGenerator;
+
     @BeforeMethod
     public void setup() {
 
@@ -97,10 +89,16 @@ public class MagicLinkExecutorTest extends PowerMockTestCase {
         flowUser = mock(FlowUser.class);
         eventService = mock(IdentityEventService.class);
 
-        PowerMockito.mockStatic(LoggerUtils.class);
-        PowerMockito.mockStatic(FileBasedConfigurationBuilder.class);
-        PowerMockito.mockStatic(MagicLinkServiceDataHolder.class);
-        PowerMockito.mockStatic(TokenGenerator.class);
+        try {
+            mockedLoggerUtils = Mockito.mockStatic(LoggerUtils.class);
+        } catch (Exception e) {
+            // LoggerUtils might already be mocked by another test class
+            // This is acceptable as we don't use it in this test
+        }
+        
+        mockedFileBasedConfigurationBuilder = Mockito.mockStatic(FileBasedConfigurationBuilder.class);
+        mockedMagicLinkServiceDataHolder = Mockito.mockStatic(MagicLinkServiceDataHolder.class);
+        mockedTokenGenerator = Mockito.mockStatic(TokenGenerator.class);
 
         FileBasedConfigurationBuilder builder = mock(FileBasedConfigurationBuilder.class);
         MagicLinkServiceDataHolder holder = mock(MagicLinkServiceDataHolder.class);
@@ -110,16 +108,43 @@ public class MagicLinkExecutorTest extends PowerMockTestCase {
         paramMap.put(MagicLinkAuthenticatorConstants.EXPIRY_TIME, "300");
         when(config.getParameterMap()).thenReturn(paramMap);
 
-        when(FileBasedConfigurationBuilder.getInstance()).thenReturn(builder);
+        mockedFileBasedConfigurationBuilder.when(FileBasedConfigurationBuilder::getInstance).thenReturn(builder);
         when(builder.getAuthenticatorBean(MagicLinkAuthenticatorConstants.AUTHENTICATOR_NAME)).thenReturn(config);
 
         when(holder.getIdentityEventService()).thenReturn(eventService);
-        when(MagicLinkServiceDataHolder.getInstance()).thenReturn(holder);
+        mockedMagicLinkServiceDataHolder.when(MagicLinkServiceDataHolder::getInstance).thenReturn(holder);
 
-        PowerMockito.when(TokenGenerator.generateToken(anyInt())).thenReturn(TEST_TOKEN);
+        mockedTokenGenerator.when(() -> TokenGenerator.generateToken(anyInt())).thenReturn(TEST_TOKEN);
 
         executor = new MagicLinkExecutor();
         when(context.getFlowUser()).thenReturn(flowUser);
+    }
+
+    @AfterMethod
+    public void tearDown() {
+        try {
+            if (mockedLoggerUtils != null) {
+                mockedLoggerUtils.close();
+            }
+        } catch (Exception ignored) {}
+        
+        try {
+            if (mockedFileBasedConfigurationBuilder != null) {
+                mockedFileBasedConfigurationBuilder.close();
+            }
+        } catch (Exception ignored) {}
+        
+        try {
+            if (mockedMagicLinkServiceDataHolder != null) {
+                mockedMagicLinkServiceDataHolder.close();
+            }
+        } catch (Exception ignored) {}
+        
+        try {
+            if (mockedTokenGenerator != null) {
+                mockedTokenGenerator.close();
+            }
+        } catch (Exception ignored) {}
     }
 
     @Test
