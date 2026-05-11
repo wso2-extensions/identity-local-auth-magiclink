@@ -417,6 +417,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUsername());
         properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
         properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
+        properties.put(IdentityEventConstants.EventProperty.APPLICATION_DOMAIN, context.getTenantDomain());
         properties.put(MagicLinkAuthenticatorConstants.MAGIC_TOKEN, magicToken);
         properties.put(MagicLinkAuthenticatorConstants.TEMPLATE_TYPE, MagicLinkAuthenticatorConstants.EVENT_NAME);
         properties.put(IdentityEventConstants.EventProperty.APPLICATION_NAME, context.getServiceProviderName());
@@ -554,7 +555,7 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
 
         String username = validateIdentifierFromRequest(request, context);
         validateEmailUsername(username, context);
-        username = FrameworkUtils.preprocessUsernameWithContextTenantDomain(username, context);
+        username = FrameworkUtils.preprocessUsernameWithUserResidentTenantDomain(username, context);
         User user = new User();
         String tenantAwareUsername = MultitenantUtils.getTenantAwareUsername(username);
         String tenantDomain = MultitenantUtils.getTenantDomain(username);
