@@ -17,6 +17,7 @@
  */
 package org.wso2.carbon.identity.application.authenticator.magiclink;
 
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -52,6 +53,8 @@ import org.wso2.carbon.identity.core.ServiceURL;
 import org.wso2.carbon.identity.core.ServiceURLBuilder;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.event.IdentityEventConstants;
+import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.handler.event.account.lock.exception.AccountLockServiceException;
 import org.wso2.carbon.identity.handler.event.account.lock.service.AccountLockService;
@@ -788,5 +791,45 @@ public class MagicLinkAuthenticatorTest {
         assertEquals(redirect, DEFAULT_SERVER_URL + "/" + ERROR_PAGE + "?" + DUMMY_QUERY_PARAMS +
                 ERROR_USER_ACCOUNT_LOCKED_QUERY_PARAMS);
         assertFalse(magicLinkAuthenticator.retryAuthenticationEnabled());
+    }
+
+    @Test(description = "triggerEvent includes SERVICE_PROVIDER_UUID when context has a service provider resource id.")
+    public void testTriggerEventIncludesServiceProviderUuid() throws Exception {
+
+        MagicLinkServiceDataHolder.getInstance().setIdentityEventService(mockIdentityEventService);
+
+        User user = new User(UUID.randomUUID().toString(), USERNAME, null);
+        user.setUserStoreDomain(USER_STORE_DOMAIN);
+        user.setTenantDomain(SUPER_TENANT_DOMAIN);
+
+        when(context.getServiceProviderName()).thenReturn(DUMMY_APP_NAME);
+        when(context.getServiceProviderResourceId()).thenReturn(DUMMY_APP_RESOURCE_ID);
+
+        magicLinkAuthenticator.triggerEvent(user, context, DUMMY_MAGIC_TOKEN, "300");
+
+        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+        Mockito.verify(mockIdentityEventService).handleEvent(eventCaptor.capture());
+        assertEquals(eventCaptor.getValue().getEventProperties()
+                .get(IdentityEventConstants.EventProperty.SERVICE_PROVIDER_UUID), DUMMY_APP_RESOURCE_ID);
+    }
+
+    @Test(description = "triggerEvent omits SERVICE_PROVIDER_UUID when service provider resource id is blank.")
+    public void testTriggerEventOmitsServiceProviderUuidWhenBlank() throws Exception {
+
+        MagicLinkServiceDataHolder.getInstance().setIdentityEventService(mockIdentityEventService);
+
+        User user = new User(UUID.randomUUID().toString(), USERNAME, null);
+        user.setUserStoreDomain(USER_STORE_DOMAIN);
+        user.setTenantDomain(SUPER_TENANT_DOMAIN);
+
+        when(context.getServiceProviderName()).thenReturn(DUMMY_APP_NAME);
+        when(context.getServiceProviderResourceId()).thenReturn(null);
+
+        magicLinkAuthenticator.triggerEvent(user, context, DUMMY_MAGIC_TOKEN, "300");
+
+        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+        Mockito.verify(mockIdentityEventService).handleEvent(eventCaptor.capture());
+        assertFalse(eventCaptor.getValue().getEventProperties()
+                .containsKey(IdentityEventConstants.EventProperty.SERVICE_PROVIDER_UUID));
     }
 }

@@ -30,6 +30,7 @@ import org.wso2.carbon.identity.application.authenticator.magiclink.TokenGenerat
 import org.wso2.carbon.identity.application.authenticator.magiclink.internal.MagicLinkServiceDataHolder;
 import org.wso2.carbon.identity.application.authenticator.magiclink.model.MagicLinkExecutorContextData;
 import org.wso2.carbon.identity.central.log.mgt.utils.LoggerUtils;
+import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
@@ -294,6 +295,33 @@ public class MagicLinkExecutorTest {
         verify(eventService).handleEvent(eventCaptor.capture());
         Event capturedEvent = eventCaptor.getValue();
         assertNull(capturedEvent.getEventProperties().get(MagicLinkAuthenticatorConstants.TEMPLATE_TYPE));
+    }
+
+    @Test
+    public void testExecuteIncludesServiceProviderUuidInEvent() throws Exception {
+
+        prepareInitiationContext();
+        String applicationId = "test-app-uuid";
+        when(context.getApplicationId()).thenReturn(applicationId);
+
+        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+        executor.execute(context);
+        verify(eventService).handleEvent(eventCaptor.capture());
+        assertEquals(eventCaptor.getValue().getEventProperties()
+                .get(IdentityEventConstants.EventProperty.SERVICE_PROVIDER_UUID), applicationId);
+    }
+
+    @Test
+    public void testExecuteOmitsServiceProviderUuidWhenApplicationIdBlank() throws Exception {
+
+        prepareInitiationContext();
+        when(context.getApplicationId()).thenReturn(null);
+
+        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+        executor.execute(context);
+        verify(eventService).handleEvent(eventCaptor.capture());
+        assertNull(eventCaptor.getValue().getEventProperties()
+                .get(IdentityEventConstants.EventProperty.SERVICE_PROVIDER_UUID));
     }
 
     @Test
