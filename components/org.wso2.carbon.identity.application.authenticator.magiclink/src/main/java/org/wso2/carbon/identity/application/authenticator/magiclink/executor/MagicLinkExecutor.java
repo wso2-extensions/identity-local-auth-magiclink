@@ -163,7 +163,7 @@ public class MagicLinkExecutor extends AuthenticationExecutor {
             otfiProperties.put(OTFI, otfi);
             context.addProperties(otfiProperties);
             magicToken = magicToken + "&" + "flowId=" + otfi;
-            triggerEvent(context, user, magicToken, expiryTime, context.getPortalUrl());
+            triggerEvent(context, user, magicToken, expiryTime, context.getPortalUrl(), context.getApplicationId());
         }
         return userInputRequiredResponse(response, MLT);
     }
@@ -212,7 +212,7 @@ public class MagicLinkExecutor extends AuthenticationExecutor {
      * @param portalURL  The callback URL to redirect after clicking the magic link.
      */
     private void triggerEvent(FlowExecutionContext context, User user, String magicToken, String expiryTime,
-                              String portalURL) {
+                              String portalURL, String applicationId) {
 
         String eventName = IdentityEventConstants.Event.TRIGGER_NOTIFICATION;
         Map<String, Object> properties = new HashMap<>();
@@ -225,6 +225,9 @@ public class MagicLinkExecutor extends AuthenticationExecutor {
         properties.put(PORTAL_URL, portalURL);
         properties.put(NotificationConstants.ARBITRARY_SEND_TO, user.getAttributes().get(EMAIL_ADDRESS_CLAIM));
         properties.put(NotificationConstants.FLOW_TYPE, context.getFlowType());
+        if (StringUtils.isNotBlank(applicationId)) {
+            properties.put(IdentityEventConstants.EventProperty.SERVICE_PROVIDER_UUID, applicationId);
+        }
         Event identityMgtEvent = new Event(eventName, properties);
         DiagnosticLog.DiagnosticLogBuilder diagnosticLogBuilder = null;
         if (LoggerUtils.isDiagnosticLogsEnabled()) {
