@@ -421,6 +421,10 @@ public class MagicLinkAuthenticator extends AbstractApplicationAuthenticator imp
         properties.put(MagicLinkAuthenticatorConstants.MAGIC_TOKEN, magicToken);
         properties.put(MagicLinkAuthenticatorConstants.TEMPLATE_TYPE, MagicLinkAuthenticatorConstants.EVENT_NAME);
         properties.put(IdentityEventConstants.EventProperty.APPLICATION_NAME, context.getServiceProviderName());
+        if (StringUtils.isNotBlank(context.getServiceProviderResourceId())) {
+            properties.put(IdentityEventConstants.EventProperty.SERVICE_PROVIDER_UUID,
+                    context.getServiceProviderResourceId());
+        }
         properties.put(MagicLinkAuthenticatorConstants.EXPIRYTIME, expiryTime);
         properties.put(MagicLinkAuthenticatorConstants.IS_API_BASED_AUTHENTICATION_SUPPORTED,
                 context.getProperty(IS_API_BASED));
