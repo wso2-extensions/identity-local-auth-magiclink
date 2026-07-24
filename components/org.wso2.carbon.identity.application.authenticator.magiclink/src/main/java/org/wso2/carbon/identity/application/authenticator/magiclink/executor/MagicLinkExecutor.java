@@ -134,6 +134,7 @@ public class MagicLinkExecutor extends AuthenticationExecutor {
         User user = new User();
         user.setUsername(username);
         user.setTenantDomain(context.getTenantDomain());
+        user.setUserStoreDomain(context.getFlowUser().getUserStoreDomain());
         HashMap<String, String> attributes = new HashMap<>();
         attributes.put(USERNAME_CLAIM, username);
         attributes.put(EMAIL_ADDRESS_CLAIM, emailAddress);
