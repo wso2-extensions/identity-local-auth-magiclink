@@ -72,6 +72,7 @@ public class MagicLinkExecutor extends AuthenticationExecutor {
 
     private static final Log LOG = LogFactory.getLog(MagicLinkExecutor.class);
     public static final String MLT = "mlt";
+    public static final String SP_ID = "spId";
     public static final String PORTAL_URL = "portalUrl";
     public static final String MAGIC_LINK_SIGN_UP_TEMPLATE = "magicLinkSignUp";
     public static final String MAGIC_LINK_PASSWORD_RECOVERY_TEMPLATE = "magicLinkPasswordRecovery";
@@ -164,6 +165,11 @@ public class MagicLinkExecutor extends AuthenticationExecutor {
             otfiProperties.put(OTFI, otfi);
             context.addProperties(otfiProperties);
             magicToken = magicToken + "&" + "flowId=" + otfi;
+            /* The portal resolves the application branding from the spId query parameter, so it has to be carried
+               by the magic link itself. */
+            if (StringUtils.isNotBlank(context.getApplicationId())) {
+                magicToken = magicToken + "&" + SP_ID + "=" + context.getApplicationId();
+            }
             triggerEvent(context, user, magicToken, expiryTime, context.getPortalUrl(), context.getApplicationId());
         }
         return userInputRequiredResponse(response, MLT);

@@ -54,6 +54,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
@@ -75,6 +76,7 @@ public class MagicLinkExecutorTest {
     private static final String TEST_TOKEN = "sample-token";
     private static final String TEST_CONTEXT_ID = "ctx-123";
     private static final String TEST_TENANT = "carbon.super";
+    private static final String TEST_APPLICATION_ID = "test-application-id";
 
     private MagicLinkExecutor executor;
     private FlowExecutionContext context;
@@ -283,6 +285,34 @@ public class MagicLinkExecutorTest {
         Event capturedEvent = eventCaptor.getValue();
         assertEquals(capturedEvent.getEventProperties().get(MagicLinkAuthenticatorConstants.TEMPLATE_TYPE),
                 MAGIC_LINK_PASSWORD_RECOVERY_TEMPLATE);
+    }
+
+    @Test
+    public void testMagicTokenCarriesApplicationId() throws Exception {
+
+        prepareInitiationContext();
+        when(context.getApplicationId()).thenReturn(TEST_APPLICATION_ID);
+        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+        executor.execute(context);
+        verify(eventService).handleEvent(eventCaptor.capture());
+        String magicToken =
+                (String) eventCaptor.getValue().getEventProperties().get(MagicLinkAuthenticatorConstants.MAGIC_TOKEN);
+        assertTrue(magicToken.contains("&spId=" + TEST_APPLICATION_ID),
+                "The magic link must carry the application id so the portal can resolve application branding. "
+                        + "Magic token: " + magicToken);
+    }
+
+    @Test
+    public void testMagicTokenOmitsApplicationIdWhenNotAvailable() throws Exception {
+
+        prepareInitiationContext();
+        when(context.getApplicationId()).thenReturn(null);
+        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+        executor.execute(context);
+        verify(eventService).handleEvent(eventCaptor.capture());
+        String magicToken =
+                (String) eventCaptor.getValue().getEventProperties().get(MagicLinkAuthenticatorConstants.MAGIC_TOKEN);
+        assertFalse(magicToken.contains("spId="), "Magic token: " + magicToken);
     }
 
     @Test
