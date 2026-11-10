@@ -61,9 +61,11 @@ import static org.testng.Assert.assertTrue;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.EMAIL_ADDRESS_CLAIM;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.USERNAME_CLAIM;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.executor.MagicLinkExecutor.MAGIC_LINK_PASSWORD_RECOVERY_TEMPLATE;
+import static org.wso2.carbon.identity.application.authenticator.magiclink.executor.MagicLinkExecutor.MAGIC_LINK_PROFILE_UPDATE_TEMPLATE;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.executor.MagicLinkExecutor.MAGIC_LINK_SIGN_UP_TEMPLATE;
 import static org.wso2.carbon.identity.application.authenticator.magiclink.executor.MagicLinkExecutorConstants.MAGIC_LINK_EXECUTOR_CONTEXT;
 import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.PASSWORD_RECOVERY;
+import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.PROFILE_UPDATE;
 import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.REGISTRATION;
 
 /**
@@ -285,6 +287,19 @@ public class MagicLinkExecutorTest {
         Event capturedEvent = eventCaptor.getValue();
         assertEquals(capturedEvent.getEventProperties().get(MagicLinkAuthenticatorConstants.TEMPLATE_TYPE),
                 MAGIC_LINK_PASSWORD_RECOVERY_TEMPLATE);
+    }
+
+    @Test
+    public void testSetMagicLinkTemplateTypeForProfileUpdateFlow() throws Exception {
+
+        prepareInitiationContext();
+        when(context.getFlowType()).thenReturn(PROFILE_UPDATE.name());
+        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+        executor.execute(context);
+        verify(eventService).handleEvent(eventCaptor.capture());
+        Event capturedEvent = eventCaptor.getValue();
+        assertEquals(capturedEvent.getEventProperties().get(MagicLinkAuthenticatorConstants.TEMPLATE_TYPE),
+                MAGIC_LINK_PROFILE_UPDATE_TEMPLATE);
     }
 
     @Test
