@@ -63,6 +63,7 @@ import static org.wso2.carbon.identity.application.authenticator.magiclink.execu
 import static org.wso2.carbon.identity.application.authenticator.magiclink.executor.MagicLinkExecutorConstants.MAGIC_LINK_EXECUTOR_CONTEXT;
 import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.INVITED_USER_REGISTRATION;
 import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.PASSWORD_RECOVERY;
+import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.PROFILE_UPDATE;
 import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.REGISTRATION;
 
 /**
@@ -76,6 +77,7 @@ public class MagicLinkExecutor extends AuthenticationExecutor {
     public static final String PORTAL_URL = "portalUrl";
     public static final String MAGIC_LINK_SIGN_UP_TEMPLATE = "magicLinkSignUp";
     public static final String MAGIC_LINK_PASSWORD_RECOVERY_TEMPLATE = "magicLinkPasswordRecovery";
+    public static final String MAGIC_LINK_PROFILE_UPDATE_TEMPLATE = "magicLinkProfileUpdate";
     public static final String MAGIC_LINK_DEVICE_REGISTRATION_TEMPLATE = "magicLinkDeviceRegistration";
     private static final String DEVICE_REGISTRATION = "DEVICE_REGISTRATION";
     public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
@@ -348,6 +350,8 @@ public class MagicLinkExecutor extends AuthenticationExecutor {
             properties.put(MagicLinkAuthenticatorConstants.TEMPLATE_TYPE, MAGIC_LINK_SIGN_UP_TEMPLATE);
         } else if (PASSWORD_RECOVERY.getType().equals(flowType)) {
             properties.put(MagicLinkAuthenticatorConstants.TEMPLATE_TYPE, MAGIC_LINK_PASSWORD_RECOVERY_TEMPLATE);
+        } else if (PROFILE_UPDATE.getType().equals(flowType)) {
+            properties.put(MagicLinkAuthenticatorConstants.TEMPLATE_TYPE, MAGIC_LINK_PROFILE_UPDATE_TEMPLATE);
         } else if (DEVICE_REGISTRATION.equals(flowType)) {
             properties.put(MagicLinkAuthenticatorConstants.TEMPLATE_TYPE, MAGIC_LINK_DEVICE_REGISTRATION_TEMPLATE);
         }
