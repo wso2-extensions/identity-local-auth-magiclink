@@ -76,6 +76,8 @@ public class MagicLinkExecutor extends AuthenticationExecutor {
     public static final String PORTAL_URL = "portalUrl";
     public static final String MAGIC_LINK_SIGN_UP_TEMPLATE = "magicLinkSignUp";
     public static final String MAGIC_LINK_PASSWORD_RECOVERY_TEMPLATE = "magicLinkPasswordRecovery";
+    public static final String MAGIC_LINK_DEVICE_REGISTRATION_TEMPLATE = "magicLinkDeviceRegistration";
+    private static final String DEVICE_REGISTRATION = "DEVICE_REGISTRATION";
     public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Override
@@ -346,6 +348,8 @@ public class MagicLinkExecutor extends AuthenticationExecutor {
             properties.put(MagicLinkAuthenticatorConstants.TEMPLATE_TYPE, MAGIC_LINK_SIGN_UP_TEMPLATE);
         } else if (PASSWORD_RECOVERY.getType().equals(flowType)) {
             properties.put(MagicLinkAuthenticatorConstants.TEMPLATE_TYPE, MAGIC_LINK_PASSWORD_RECOVERY_TEMPLATE);
+        } else if (DEVICE_REGISTRATION.equals(flowType)) {
+            properties.put(MagicLinkAuthenticatorConstants.TEMPLATE_TYPE, MAGIC_LINK_DEVICE_REGISTRATION_TEMPLATE);
         }
     }
 
